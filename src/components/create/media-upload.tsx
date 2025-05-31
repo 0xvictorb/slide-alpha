@@ -74,6 +74,8 @@ export function MediaUpload({ form }: MediaUploadProps) {
 								onUploadComplete={(
 									result: CloudinaryUploadResult | CloudinaryUploadResult[]
 								) => {
+									console.log(result)
+
 									const images = Array.isArray(result) ? result : [result]
 									const imagesData = images.map((item, index) => ({
 										cloudinaryPublicId: item.publicId,

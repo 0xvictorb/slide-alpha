@@ -49,25 +49,57 @@ export function useTokenBalances() {
 		}))
 	})
 
-	const tokensWithBalances = tokens?.map((token, index) => {
-		const balance = balancesQuery.data?.find((b) => b.coinType === token.type)
-		const formattedBalance =
-			fromDecimals(balance?.balance || '0', token?.decimals || 0) || '0'
-		const usdPrice = tokenPrices?.[index]?.price
-		const usdValue = usdPrice
-			? Number(formattedBalance) * Number(usdPrice)
-			: undefined
+	const tokensWithBalances = tokens
+		?.map((token, index) => {
+			const balance = balancesQuery.data?.find((b) => b.coinType === token.type)
+			const formattedBalance =
+				fromDecimals(balance?.balance || '0', token?.decimals || 0) || '0'
+			const usdPrice = tokenPrices?.[index]?.price
+			const usdValue = usdPrice
+				? Number(formattedBalance) * Number(usdPrice)
+				: undefined
 
-		return {
-			...token,
-			...metadataQueries[index]?.data,
-			iconUrl: metadataQueries[index]?.data?.iconUrl || token.iconUrl,
-			balance: balance?.balance || '0',
-			formattedBalance,
-			usdValue: usdValue || 0,
-			usdPrice: usdPrice || 0
-		} satisfies TokenBalance
-	})
+			return {
+				...token,
+				...metadataQueries[index]?.data,
+				iconUrl: metadataQueries[index]?.data?.iconUrl || token.iconUrl,
+				balance: balance?.balance || '0',
+				formattedBalance,
+				usdValue: usdValue || 0,
+				usdPrice: usdPrice || 0
+			} satisfies TokenBalance
+		})
+		?.sort((a, b) => {
+			// Verified SUI first
+			const isVerifiedSuiA = a.symbol === 'SUI' && (a.verified || false)
+			const isVerifiedSuiB = b.symbol === 'SUI' && (b.verified || false)
+
+			if (isVerifiedSuiA && !isVerifiedSuiB) return -1
+			if (!isVerifiedSuiA && isVerifiedSuiB) return 1
+			if (isVerifiedSuiA && isVerifiedSuiB) return 0
+
+			// Then tokens with balances (non-zero)
+			const hasBalanceA = Number(a.formattedBalance) > 0
+			const hasBalanceB = Number(b.formattedBalance) > 0
+
+			if (hasBalanceA && !hasBalanceB) return -1
+			if (!hasBalanceA && hasBalanceB) return 1
+
+			// If both have balances, sort by USD value descending
+			if (hasBalanceA && hasBalanceB) {
+				return (b.usdValue || 0) - (a.usdValue || 0)
+			}
+
+			// Then verified tokens without balances
+			const isVerifiedA = a.verified || false
+			const isVerifiedB = b.verified || false
+
+			if (isVerifiedA && !isVerifiedB) return -1
+			if (!isVerifiedA && isVerifiedB) return 1
+
+			// Finally, sort alphabetically by symbol
+			return a.symbol.localeCompare(b.symbol)
+		})
 
 	return {
 		data: tokensWithBalances,

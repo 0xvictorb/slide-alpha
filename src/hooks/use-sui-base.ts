@@ -3,6 +3,7 @@ import {
 	useSignTransaction,
 	useSuiClient
 } from '@mysten/dapp-kit'
+import { BluefinXTx } from '@7kprotocol/sdk-ts'
 import { Transaction } from '@mysten/sui/transactions'
 import {
 	executeSuiTransaction,
@@ -15,14 +16,15 @@ export const useSuiBase = () => {
 	const account = useCurrentAccount()
 	const { mutateAsync: signTransaction } = useSignTransaction()
 
-	const executeTransaction = async (transaction: Transaction) => {
+	const executeTransaction = async (transaction: Transaction | BluefinXTx) => {
 		if (!account?.chains[0]) {
 			throw new SuiTransactionError('No account connected')
 		}
 
 		try {
 			const { signature, bytes } = await signTransaction({
-				transaction
+				transaction:
+					transaction instanceof BluefinXTx ? transaction.txBytes : transaction
 			})
 
 			return executeSuiTransaction({

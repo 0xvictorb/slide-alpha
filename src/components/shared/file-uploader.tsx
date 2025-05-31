@@ -249,7 +249,7 @@ export function FileUploader({
 			// Transform and store the result
 			const transformedResult: CloudinaryUploadResult = {
 				publicId: result.public_id,
-				url: result.secure_url,
+				url: result.media_url,
 				...(result.resource_type === 'video' &&
 					result.thumbnail && {
 						thumbnail: result.thumbnail,

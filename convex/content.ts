@@ -21,8 +21,11 @@ export const getFirstActiveContent = query({
 
 		if (!content) return null
 
+		const author = await ctx.db.get(content.authorId)
+
 		return {
-			...content
+			...content,
+			authorWalletAddress: author?.walletAddress
 		}
 	}
 })

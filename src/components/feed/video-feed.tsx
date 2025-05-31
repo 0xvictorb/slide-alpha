@@ -22,6 +22,7 @@ interface ContentMedia {
 		alt?: string
 	}>
 	promotedTokenId?: string
+	creatorAddress: string
 }
 
 export function VideoFeed({ className }: VideoFeedProps) {
@@ -52,7 +53,8 @@ export function VideoFeed({ className }: VideoFeedProps) {
 						url: image.cloudinaryUrl,
 						alt: image.cloudinaryPublicId
 					})),
-					promotedTokenId: firstContent.promotedTokenId
+					promotedTokenId: firstContent.promotedTokenId,
+					creatorAddress: firstContent.authorWalletAddress || ''
 				})
 			} else {
 				// Video post
@@ -61,7 +63,8 @@ export function VideoFeed({ className }: VideoFeedProps) {
 					mediaUrl: firstContent.video?.cloudinaryUrl || '',
 					thumbnailUrl: firstContent.video?.thumbnailUrl || '',
 					resourceType: 'video',
-					promotedTokenId: firstContent.promotedTokenId
+					promotedTokenId: firstContent.promotedTokenId,
+					creatorAddress: firstContent.authorWalletAddress || ''
 				})
 			}
 		}
@@ -117,6 +120,7 @@ export function VideoFeed({ className }: VideoFeedProps) {
 				<TokenInfo
 					tokenId={currentContent.promotedTokenId}
 					className="absolute top-4 left-4 z-10"
+					kolAddress={currentContent.creatorAddress}
 				/>
 			)}
 

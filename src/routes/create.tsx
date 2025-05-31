@@ -99,7 +99,11 @@ function CreatePage() {
 				</div>
 
 				<Form {...form}>
-					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+					<form
+						onSubmit={form.handleSubmit(onSubmit, (errors) => {
+							console.log(errors)
+						})}
+						className="space-y-6">
 						<MediaUpload form={form} />
 						<ContentInfo form={form} />
 						<Separator />

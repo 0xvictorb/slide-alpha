@@ -3,7 +3,7 @@ import { useAction } from 'convex/react'
 
 interface CloudinaryUploadResult {
 	public_id: string
-	secure_url: string
+	url: string
 	playback_url: string
 	asset_id: string
 	resource_type: 'image' | 'video'
@@ -64,7 +64,7 @@ export async function uploadToCloudinary(
 	const data = await response.json()
 	return {
 		public_id: data.public_id,
-		secure_url: data.secure_url,
+		url: data.url,
 		playback_url: data.playback_url,
 		asset_id: data.asset_id,
 		resource_type: data.resource_type,
@@ -107,7 +107,8 @@ export function useCloudinaryUpload() {
 
 			return {
 				public_id: result.public_id,
-				secure_url: result.playback_url,
+				media_url:
+					result.resource_type === 'video' ? result.playback_url : result.url,
 				resource_type: result.resource_type,
 				duration: result.duration,
 				thumbnail: thumbnailUrl

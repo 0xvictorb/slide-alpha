@@ -11,9 +11,10 @@ import { TokenSwapDrawer } from './token-swap-drawer'
 interface TokenInfoProps {
 	tokenId: string
 	className?: string
+	kolAddress: string
 }
 
-export function TokenInfo({ tokenId, className }: TokenInfoProps) {
+export function TokenInfo({ tokenId, className, kolAddress }: TokenInfoProps) {
 	const [isChartOpen, setIsChartOpen] = useState(false)
 	const [isSwapOpen, setIsSwapOpen] = useState(false)
 	const { data: tokens } = useTokenBalances()
@@ -88,6 +89,7 @@ export function TokenInfo({ tokenId, className }: TokenInfoProps) {
 				token={token}
 				isOpen={isSwapOpen}
 				onOpenChange={setIsSwapOpen}
+				kolAddress={kolAddress}
 			/>
 		</>
 	)
