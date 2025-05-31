@@ -49,8 +49,7 @@ export function UserContentFeed({
 	const navigate = useNavigate()
 	const [currentIndex, setCurrentIndex] = useState(0)
 	const [contentList, setContentList] = useState<ContentMedia[]>([])
-	const [isLoading, setIsLoading] = useState(false)
-	const [audioEnabled, setAudioEnabled] = useState(true)
+	const [audioEnabled, setAudioEnabled] = useState(false)
 
 	// Enhanced drag/swipe state for TikTok-like experience
 	const [dragOffset, setDragOffset] = useState(0)
@@ -72,6 +71,11 @@ export function UserContentFeed({
 	const userContent = useQuery(api.users.getUserContent, {
 		walletAddress: profileAddress
 	})
+
+	// Enable audio after component mounts (similar to splash completion)
+	useEffect(() => {
+		setAudioEnabled(true)
+	}, [])
 
 	// Format content item helper
 	const formatContentItem = useCallback(
@@ -350,6 +354,7 @@ export function UserContentFeed({
 							onPlay={isActive ? handleMediaView : () => {}}
 							audioEnabled={audioEnabled && isActive}
 							className="w-full h-full"
+							showEnhancedControls={isActive}
 						/>
 					) : (
 						<ImageCarousel
@@ -381,9 +386,9 @@ export function UserContentFeed({
 								</Button>
 							</div>
 
-							{/* Token information at the top */}
+							{/* Token information at the bottom */}
 							{content.promotedTokenId && (
-								<div className="absolute top-4 right-4 left-1/2 z-10">
+								<div className="absolute bottom-4 left-4 right-4 z-10">
 									<TokenInfo
 										tokenId={content.promotedTokenId}
 										className="w-full"
@@ -393,12 +398,20 @@ export function UserContentFeed({
 							)}
 
 							{/* Engagement actions on the right side */}
-							<div className="absolute bottom-4 right-4 z-10">
+							<div
+								className={cn(
+									'absolute bottom-4 right-4 z-10',
+									content.promotedTokenId ? 'bottom-24' : 'bottom-4'
+								)}>
 								<EngagementActions contentId={content.id} />
 							</div>
 
 							{/* Bottom section with user info and content */}
-							<div className="absolute bottom-4 left-4 right-20 z-10">
+							<div
+								className={cn(
+									'absolute bottom-4 left-4 right-20 z-10',
+									content.promotedTokenId ? 'bottom-24' : 'bottom-4'
+								)}>
 								{/* User Profile */}
 								<div className="mb-3">
 									<UserProfile
@@ -480,15 +493,6 @@ export function UserContentFeed({
 				}}>
 				{contentList.map((content, index) => renderContentItem(content, index))}
 			</div>
-
-			{/* Loading indicator */}
-			{isLoading && (
-				<div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
-					<div className="bg-black/50 rounded-lg px-3 py-1 text-white text-sm">
-						Loading more...
-					</div>
-				</div>
-			)}
 
 			{/* Drag indicator */}
 			{isDragging && Math.abs(dragOffset) > 20 && (

@@ -408,7 +408,7 @@ export function ContentFeed({ className }: ContentFeedProps) {
 						<>
 							{/* Token information at the top */}
 							{content.promotedTokenId && (
-								<div className="absolute top-4 left-4 right-4 z-10">
+								<div className="absolute bottom-4 left-4 right-4 z-10">
 									<TokenInfo
 										tokenId={content.promotedTokenId}
 										className="w-full"
@@ -418,12 +418,20 @@ export function ContentFeed({ className }: ContentFeedProps) {
 							)}
 
 							{/* Engagement actions on the right side */}
-							<div className="absolute bottom-4 right-4 z-10">
+							<div
+								className={cn(
+									'absolute bottom-4 right-4 z-10',
+									content.promotedTokenId ? 'bottom-24' : 'bottom-4'
+								)}>
 								<EngagementActions contentId={content.id} />
 							</div>
 
 							{/* Bottom section with user info and content */}
-							<div className="absolute bottom-4 left-4 right-20 z-10">
+							<div
+								className={cn(
+									'absolute bottom-4 left-4 right-20 z-10',
+									content.promotedTokenId ? 'bottom-24' : 'bottom-4'
+								)}>
 								{/* User Profile */}
 								<div className="mb-3">
 									<UserProfile

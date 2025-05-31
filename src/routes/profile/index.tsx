@@ -3,7 +3,7 @@ import { useCurrentAccount } from '@mysten/dapp-kit'
 import { useEffect } from 'react'
 import { WalletGuard } from '@/components/guards/wallet-guard'
 
-export const Route = createFileRoute('/profile')({
+export const Route = createFileRoute('/profile/')({
 	component: ProfilePage
 })
 
@@ -16,8 +16,7 @@ function ProfilePage() {
 		if (currentAccount?.address) {
 			navigate({
 				to: '/profile/$address',
-				params: { address: currentAccount.address },
-				replace: true
+				params: { address: currentAccount.address }
 			})
 		}
 	}, [currentAccount?.address, navigate])
