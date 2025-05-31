@@ -1,0 +1,25 @@
+{
+	"$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+	"extends": ["rocketseat-biomejs-config/react"],
+	"organizeImports": {
+		"enabled": true
+	},
+	"files": {
+		"ignore": [
+			"node_modules",
+			"dist",
+			"tsconfig.app.json",
+			"tsconfig.node.json",
+			"./public/*"
+		]
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "single",
+			"semicolons": "asNeeded",
+			"trailingCommas": "none",
+			"bracketSameLine": true,
+			"bracketSpacing": true
+		}
+	}
+}

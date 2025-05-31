@@ -1,0 +1,18 @@
+:root {
+	--tv-color-platform-background: #ffffff!important;
+	--tv-color-pane-background: #ffffff!important;
+}
+:root.theme-dark {
+	--tv-color-platform-background: #222433 !important;
+	--tv-color-pane-background: #222433 !important;
+	--tv-color-toolbar-button-background-hover: #464567 !important;
+	--tv-color-toolbar-button-background-expanded: #464567 !important;
+	--tv-color-toolbar-button-background-active: #221533!important;
+	--tv-color-toolbar-button-background-active-hover: #464567!important;
+	--tv-color-toolbar-button-text: #fff !important;
+	--tv-color-toolbar-button-text-hover: #fff !important;
+	--tv-color-toolbar-button-text-active: #5D5FEF !important;
+	--tv-color-toolbar-button-text-active-hover: #5D5FEF !important;
+	--tv-color-item-active-text: #05C9A1 !important;
+}
+
