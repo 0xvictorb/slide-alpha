@@ -1,4 +1,4 @@
-import { ChapterTitle } from "@vidstack/react"
+import { ChapterTitle } from '@vidstack/react'
 
 export function Title() {
 	return (

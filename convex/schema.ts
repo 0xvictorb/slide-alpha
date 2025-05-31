@@ -1,40 +1,59 @@
 import { defineSchema, defineTable } from 'convex/server'
 import { v } from 'convex/values'
 
+const usersSchema = defineTable({
+	name: v.string(),
+	walletAddress: v.string(), // SUI wallet address
+	bio: v.optional(v.string()),
+	avatarUrl: v.optional(v.string()),
+	followerCount: v.number(), // Denormalized counter
+	followingCount: v.number(), // Denormalized counter
+	isCreator: v.boolean() // Flag to identify creators
+}).index('by_wallet', ['walletAddress'])
+
+const contentSchema = defineTable({
+	cloudinaryPublicId: v.string(),
+	cloudinaryUrl: v.string(),
+	cloudinaryResourceType: v.union(v.literal('image'), v.literal('video')),
+	thumbnailPublicId: v.optional(v.string()),
+	thumbnailUrl: v.optional(v.string()),
+	authorId: v.id('users'),
+	title: v.string(),
+	description: v.optional(v.string()),
+	duration: v.optional(v.number()),
+	isPremium: v.boolean(),
+	isActive: v.boolean(),
+	viewCount: v.number(), // Track number of views
+	lastViewedAt: v.optional(v.number()) // Track last view timestamp
+})
+	.index('by_author', ['authorId'])
+	.index('by_views', ['viewCount']) // Index for sorting by views
+
+const contentLikesSchema = defineTable({
+	contentId: v.id('content'),
+	userId: v.id('users'),
+	type: v.union(v.literal('like'), v.literal('dislike')),
+	createdAt: v.number()
+})
+	.index('by_content_user', ['contentId', 'userId'])
+	.index('by_content', ['contentId'])
+	.index('by_user', ['userId'])
+
+const contentViewsSchema = defineTable({
+	contentId: v.id('content'),
+	viewerId: v.string(), // wallet address or 'anonymous'
+	viewedAt: v.number()
+})
+	.index('by_content_viewer', ['contentId', 'viewerId'])
+	.index('by_content', ['contentId'])
+	.index('by_viewer', ['viewerId'])
+
 export default defineSchema({
 	// Users table - stores user profiles and authentication info
-	users: defineTable({
-		name: v.string(),
-		walletAddress: v.string(), // SUI wallet address
-		bio: v.optional(v.string()),
-		avatarUrl: v.optional(v.string()),
-		followerCount: v.number(), // Denormalized counter
-		followingCount: v.number(), // Denormalized counter
-		isCreator: v.boolean() // Flag to identify creators
-	}).index('by_wallet', ['walletAddress']),
+	users: usersSchema,
 
 	// Content table - stores video/image content metadata
-	content: defineTable({
-		authorId: v.id('users'),
-		title: v.string(),
-		description: v.optional(v.string()),
-		cloudinaryPublicId: v.string(), // Cloudinary public ID
-		cloudinaryUrl: v.string(), // Full Cloudinary URL
-		cloudinaryResourceType: v.union(v.literal('video'), v.literal('image')),
-		thumbnailPublicId: v.optional(v.string()), // Cloudinary thumbnail ID
-		thumbnailUrl: v.optional(v.string()), // Cloudinary thumbnail URL
-		duration: v.optional(v.number()), // For videos only
-		viewCount: v.number(),
-		likeCount: v.number(), // Denormalized counter
-		dislikeCount: v.number(), // Denormalized counter
-		tokenId: v.optional(v.string()), // Associated SUI token ID
-		isPremium: v.boolean(),
-		isActive: v.boolean() // For soft deletion
-	})
-		.index('by_author', ['authorId'])
-		.index('by_token', ['tokenId'])
-		.index('by_active', ['isActive'])
-		.index('by_engagement', ['likeCount']), // For trending content
+	content: contentSchema,
 
 	// Engagement table - stores user interactions
 	engagement: defineTable({
@@ -68,5 +87,8 @@ export default defineSchema({
 		likeCount: v.number()
 	})
 		.index('by_content', ['contentId'])
-		.index('by_author', ['authorId'])
+		.index('by_author', ['authorId']),
+
+	contentLikes: contentLikesSchema,
+	contentViews: contentViewsSchema
 })

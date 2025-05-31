@@ -1,121 +1,126 @@
 import { useEffect, useState } from 'react'
-import { useQuery } from 'convex/react'
+import { useQuery, useMutation } from 'convex/react'
 import { api } from '@convex/_generated/api'
-import { VideoPlayer } from '@/components/shared/video-player'
-import { useInView } from 'react-intersection-observer'
+import type { Id } from '@convex/_generated/dataModel'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Play } from 'lucide-react'
+import { VideoDisplay } from './video-display'
+import { ImageCarousel } from './image-carousel'
+import { EngagementActions } from './engagement-actions'
 
 interface VideoFeedProps {
 	className?: string
 }
 
+interface ContentMedia {
+	id: Id<'content'>
+	mediaUrl: string
+	thumbnailUrl?: string
+	resourceType: 'video' | 'image'
+	images?: Array<{
+		url: string
+		alt?: string
+	}>
+}
+
 export function VideoFeed({ className }: VideoFeedProps) {
-	const [currentVideo, setCurrentVideo] = useState<{
-		videoUrl: string
-		thumbnailUrl?: string
-		resourceType: 'video' | 'image'
-	} | null>(null)
-	const [isPlaying, setIsPlaying] = useState(false)
-	const [isMuted, setIsMuted] = useState(true)
-	const [hasStarted, setHasStarted] = useState(false)
+	const [currentContent, setCurrentContent] = useState<ContentMedia | null>(
+		null
+	)
 
-	// Use intersection observer to detect when video is in view
-	const { ref: videoRef, inView } = useInView({
-		threshold: 0.5 // Trigger when 50% of the video is visible
-	})
+	const incrementView = useMutation(api.content.incrementView)
+	const contentStats = useQuery(
+		api.content.getContentStats,
+		currentContent ? { contentId: currentContent.id } : 'skip'
+	)
 
-	// Fetch first video from the content table
+	// Fetch first content from the content table
 	const firstContent = useQuery(api.content.getFirstActiveContent)
 
 	// When we get the content data, set it as current
 	useEffect(() => {
 		if (firstContent) {
-			setCurrentVideo({
-				videoUrl: firstContent.streamingUrl,
-				thumbnailUrl: firstContent.thumbnailUrl,
-				resourceType: firstContent.cloudinaryResourceType
-			})
+			if (firstContent.cloudinaryResourceType === 'image') {
+				// If it's an image post, we might have multiple images
+				setCurrentContent({
+					id: firstContent._id,
+					mediaUrl: firstContent.cloudinaryUrl,
+					thumbnailUrl: firstContent.thumbnailUrl,
+					resourceType: firstContent.cloudinaryResourceType,
+					images: [
+						{
+							url: firstContent.cloudinaryUrl,
+							alt: firstContent.title
+						}
+						// Add more images here when the API supports multiple images
+					]
+				})
+			} else {
+				// Video post
+				setCurrentContent({
+					id: firstContent._id,
+					mediaUrl: firstContent.cloudinaryUrl,
+					thumbnailUrl: firstContent.thumbnailUrl,
+					resourceType: firstContent.cloudinaryResourceType
+				})
+			}
 		}
 	}, [firstContent])
 
-	// Handle autoplay when video comes into view
-	useEffect(() => {
-		if (currentVideo?.resourceType === 'video' && hasStarted) {
-			setIsPlaying(inView)
+	const handleMediaView = async () => {
+		if (currentContent) {
+			try {
+				await incrementView({ contentId: currentContent.id })
+			} catch (error) {
+				console.error('Failed to increment view:', error)
+			}
 		}
-	}, [inView, currentVideo, hasStarted])
-
-	// Handle video ready
-	const handleVideoReady = () => {
-		console.log('Video ready')
 	}
 
-	const handleGetStarted = () => {
-		setHasStarted(true)
-		setIsMuted(false)
-		setIsPlaying(true)
-	}
-
-	if (!currentVideo) {
+	if (!currentContent) {
 		return (
-			<div className={cn('w-full aspect-[9/16] bg-gray-100', className)}>
-				<div className="flex items-center justify-center h-full">
-					<p className="text-gray-500">Loading...</p>
-				</div>
+			<div
+				className={cn('flex items-center justify-center h-[100vh]', className)}>
+				<p className="text-gray-500">Loading...</p>
 			</div>
 		)
 	}
 
 	return (
-		<div
-			ref={videoRef}
-			className={cn(
-				'w-full aspect-[9/16] bg-black relative overflow-hidden',
-				className
-			)}>
-			{currentVideo.resourceType === 'video' ? (
-				<>
-					<VideoPlayer
-						videoUrl={currentVideo.videoUrl}
-						thumbnailUrl={''}
-						isMuted={isMuted}
-						isPlaying={isPlaying}
-						onVideoReady={handleVideoReady}
-						loadStrategy="eager"
+		<div className={cn('relative w-full h-[100vh]', className)}>
+			<div className="absolute inset-0 flex items-center justify-center">
+				{currentContent.resourceType === 'video' ? (
+					<VideoDisplay
+						videoUrl={currentContent.mediaUrl}
+						thumbnailUrl={currentContent.thumbnailUrl}
+						onPlay={handleMediaView}
+						className="w-full h-full"
 					/>
-					{!hasStarted && (
-						<div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
-							<Button
-								onClick={handleGetStarted}
-								size="lg"
-								className="flex items-center gap-2">
-								<Play className="w-4 h-4" />
-								Get Started
-							</Button>
-						</div>
-					)}
-				</>
-			) : (
-				<img
-					src={currentVideo.videoUrl}
-					alt="Content"
-					className="w-full h-full object-cover"
-				/>
-			)}
+				) : (
+					<ImageCarousel
+						images={
+							currentContent.images || [
+								{
+									url: currentContent.mediaUrl,
+									alt: 'Content'
+								}
+							]
+						}
+						onView={handleMediaView}
+						className="w-full h-full"
+					/>
+				)}
+			</div>
 
-			{/* Mute/Unmute Button - only show for videos after started */}
-			{currentVideo.resourceType === 'video' && hasStarted && (
-				<button
-					onClick={() => setIsMuted(!isMuted)}
-					className="absolute bottom-4 right-4 z-10 p-2 rounded-full bg-black/50 text-white">
-					{isMuted ? (
-						<span className="sr-only">Unmute</span>
-					) : (
-						<span className="sr-only">Mute</span>
-					)}
-				</button>
+			{/* Engagement actions */}
+			<div className="absolute bottom-4 right-4 z-10">
+				<EngagementActions contentId={currentContent.id} />
+			</div>
+
+			{/* Stats */}
+			{contentStats && (
+				<div className="absolute top-4 right-4 z-10 bg-black/50 rounded-lg px-2 py-1 text-white text-sm">
+					<p>{contentStats.viewCount} views</p>
+				</div>
 			)}
 		</div>
 	)

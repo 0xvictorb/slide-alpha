@@ -21,6 +21,7 @@ interface VideoPlayerProps {
 	isMuted: boolean
 	isPlaying: boolean
 	onVideoReady?: () => void
+	onPlay?: () => void
 	loadStrategy?: MediaLoadingStrategy
 }
 
@@ -31,6 +32,7 @@ export const VideoPlayer = ({
 	isMuted,
 	isPlaying,
 	onVideoReady,
+	onPlay,
 	loadStrategy = 'eager'
 }: VideoPlayerProps) => {
 	const player = useRef<MediaPlayerInstance>(null)
@@ -51,20 +53,30 @@ export const VideoPlayer = ({
 		shouldPlayRef.current = isPlaying
 		if (player.current && isMediaReady) {
 			if (isPlaying) {
-				player.current.play().catch((error) => {
-					console.error('Play error:', error)
-					setPlayError(error)
-					// If autoplay failed, try playing muted
-					if (error.name === 'NotAllowedError') {
-						player.current!.muted = true
-						player.current!.play().catch(console.error)
-					}
-				})
+				player.current
+					.play()
+					.then(() => {
+						onPlay?.()
+					})
+					.catch((error) => {
+						console.error('Play error:', error)
+						setPlayError(error)
+						// If autoplay failed, try playing muted
+						if (error.name === 'NotAllowedError') {
+							player.current!.muted = true
+							player
+								.current!.play()
+								.then(() => {
+									onPlay?.()
+								})
+								.catch(console.error)
+						}
+					})
 			} else {
 				player.current.pause()
 			}
 		}
-	}, [isPlaying, isMediaReady])
+	}, [isPlaying, isMediaReady, onPlay])
 
 	function onProviderChange(
 		provider: MediaProviderAdapter | null,

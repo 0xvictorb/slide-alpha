@@ -3,7 +3,8 @@ import {
 	ConnectModal,
 	useCurrentAccount,
 	useDisconnectWallet,
-	useSwitchAccount
+	useSwitchAccount,
+	useSignPersonalMessage
 } from '@mysten/dapp-kit'
 import { formatAddress } from '@mysten/sui/utils'
 import { LogOut, SwitchCamera, User, Wallet } from 'lucide-react'
@@ -23,10 +24,13 @@ import { useAtomValue } from 'jotai'
 import { walletAccountListAtom } from '@/atoms/account.atom'
 import { toast } from 'sonner'
 
+const NONCE_MESSAGE = 'Sign in to Slide Alpha'
+
 const WalletButton = () => {
 	const currentAccount = useCurrentAccount()
 	const { mutate: disconnect } = useDisconnectWallet()
 	const { mutate: switchAccount } = useSwitchAccount()
+	const { mutate: signMessage } = useSignPersonalMessage()
 	const [open, setOpen] = useState(false)
 	const accounts = useAtomValue(walletAccountListAtom)
 	const connectWalletMutation = useMutation(api.users.connectWallet)
@@ -36,9 +40,15 @@ const WalletButton = () => {
 		const handleWalletConnection = async () => {
 			if (currentAccount?.address) {
 				try {
+					// Request signature
+					await signMessage({
+						message: new TextEncoder().encode(NONCE_MESSAGE)
+					})
+
+					// Connect wallet in our database
 					const result = await connectWalletMutation({
 						walletAddress: currentAccount.address,
-						name: currentAccount.label // Use wallet label as name if available
+						name: currentAccount.label || undefined
 					})
 
 					if (result.isNewUser) {
@@ -52,7 +62,12 @@ const WalletButton = () => {
 		}
 
 		handleWalletConnection()
-	}, [currentAccount?.address, currentAccount?.label, connectWalletMutation])
+	}, [
+		currentAccount?.address,
+		currentAccount?.label,
+		connectWalletMutation,
+		signMessage
+	])
 
 	if (currentAccount) {
 		return (

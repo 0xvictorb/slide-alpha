@@ -8,41 +8,41 @@
 export const getPaginationVisiblePages = (
 	currentPage: number,
 	totalPages: number,
-	windowSize: number = 2,
-): (number | "ellipsis")[] => {
+	windowSize: number = 2
+): (number | 'ellipsis')[] => {
 	// Handle edge cases
-	if (totalPages <= 1) return [1];
+	if (totalPages <= 1) return [1]
 	if (totalPages <= 5)
-		return Array.from({ length: totalPages }, (_, i) => i + 1);
+		return Array.from({ length: totalPages }, (_, i) => i + 1)
 
-	const pages: (number | "ellipsis")[] = [];
+	const pages: (number | 'ellipsis')[] = []
 
 	// Calculate window boundaries
-	const leftBound = Math.max(2, currentPage - windowSize);
-	const rightBound = Math.min(totalPages - 1, currentPage + windowSize);
+	const leftBound = Math.max(2, currentPage - windowSize)
+	const rightBound = Math.min(totalPages - 1, currentPage + windowSize)
 
 	// Always add page 1
-	pages.push(1);
+	pages.push(1)
 
 	// Add left ellipsis if needed
 	if (leftBound > 2) {
-		pages.push("ellipsis");
+		pages.push('ellipsis')
 	}
 
 	// Add pages within the window
 	for (let i = leftBound; i <= rightBound; i++) {
-		pages.push(i);
+		pages.push(i)
 	}
 
 	// Add right ellipsis if needed
 	if (rightBound < totalPages - 1) {
-		pages.push("ellipsis");
+		pages.push('ellipsis')
 	}
 
 	// Always add last page
 	if (totalPages > 1) {
-		pages.push(totalPages);
+		pages.push(totalPages)
 	}
 
-	return pages;
-};
+	return pages
+}

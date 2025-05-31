@@ -1,78 +1,78 @@
-import BigNumber from "bignumber.js";
-import { camelCase } from "es-toolkit";
+import BigNumber from 'bignumber.js'
+import { camelCase } from 'es-toolkit'
 
 export type ValidationRule = {
-	validate: (value: any) => boolean;
-	message: string;
-};
+	validate: (value: any) => boolean
+	message: string
+}
 
 export const createRules = (rules: ValidationRule[]) => {
-	const validate: Record<string, (value: any) => boolean | string> = {};
+	const validate: Record<string, (value: any) => boolean | string> = {}
 
 	for (const rule of rules) {
 		validate[camelCase(rule.message)] = (value: any) =>
-			rule.validate(value) || rule.message;
+			rule.validate(value) || rule.message
 	}
-	return { validate };
-};
+	return { validate }
+}
 
 export const rules = {
 	required: (message: string) => {
-		return { validate: (value: any) => value !== "", message };
+		return { validate: (value: any) => value !== '', message }
 	},
 	min: (min: string | number | BigNumber, message: string) => {
 		return {
 			validate: (value: any) => {
-				if (!value) return true;
-				return BigNumber(value).gte(min);
+				if (!value) return true
+				return BigNumber(value).gte(min)
 			},
-			message,
-		};
+			message
+		}
 	},
 	max: (max: string | number | BigNumber, message: string) => {
 		return {
 			validate: (value: any) => {
-				if (!value) return true;
-				return BigNumber(value).lte(max);
+				if (!value) return true
+				return BigNumber(value).lte(max)
 			},
-			message,
-		};
+			message
+		}
 	},
 	integer: (message: string) => {
-		return { validate: (value: any) => BigNumber(value).isInteger(), message };
+		return { validate: (value: any) => BigNumber(value).isInteger(), message }
 	},
 	greaterThan: (min: number | BigNumber, message: string) => {
 		return {
 			validate: (value: any) => {
-				if (!value) return true;
-				return BigNumber(value).gt(min);
+				if (!value) return true
+				return BigNumber(value).gt(min)
 			},
-			message,
-		};
+			message
+		}
 	},
 	lessThan: (max: number | BigNumber, message: string) => {
 		return {
 			validate: (value: any) => {
-				if (!value) return true;
-				return BigNumber(value).lt(max);
+				if (!value) return true
+				return BigNumber(value).lt(max)
 			},
-			message,
-		};
+			message
+		}
 	},
 	inRange: (
 		min: number | BigNumber,
 		max: number | BigNumber,
-		message: string,
+		message: string
 	) => {
 		return {
 			validate: (value: any) => {
-				if (!value) return true;
-				return BigNumber(value).gte(min) && BigNumber(value).lte(max);
+				if (!value) return true
+				return BigNumber(value).gte(min) && BigNumber(value).lte(max)
 			},
-			message,
-		};
+			message
+		}
 	},
 	custom: (validate: (value: any) => boolean, message: string) => {
-		return { validate, message };
-	},
-};
+		return { validate, message }
+	}
+}

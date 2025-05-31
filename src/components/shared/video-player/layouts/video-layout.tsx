@@ -1,4 +1,4 @@
-import { Captions, Gesture } from "@vidstack/react"
+import { Captions, Gesture } from '@vidstack/react'
 
 // import * as Buttons from "./buttons"
 // import * as Menus from "./menus"

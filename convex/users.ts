@@ -9,20 +9,19 @@ import { v } from 'convex/values'
 export const connectWallet = mutation({
 	args: {
 		walletAddress: v.string(),
-		name: v.optional(v.string()) // Optional name for first-time users
+		name: v.optional(v.string())
 	},
 	returns: v.object({
 		userId: v.id('users'),
 		isNewUser: v.boolean()
 	}),
 	handler: async (ctx, args) => {
-		// Check if user already exists with this wallet
+		// Check if user exists
 		const existingUser = await ctx.db
 			.query('users')
 			.withIndex('by_wallet', (q) => q.eq('walletAddress', args.walletAddress))
 			.unique()
 
-		// If user exists, return their ID
 		if (existingUser) {
 			return {
 				userId: existingUser._id,
@@ -30,15 +29,13 @@ export const connectWallet = mutation({
 			}
 		}
 
-		// Create new user if doesn't exist
+		// Create new user
 		const userId = await ctx.db.insert('users', {
+			name: args.name || 'Anonymous',
 			walletAddress: args.walletAddress,
-			name: args.name ?? `User_${args.walletAddress.slice(0, 6)}`, // Use provided name or generate default
-			bio: '',
-			avatarUrl: undefined,
 			followerCount: 0,
 			followingCount: 0,
-			isCreator: false // New users start as regular users
+			isCreator: false
 		})
 
 		return {

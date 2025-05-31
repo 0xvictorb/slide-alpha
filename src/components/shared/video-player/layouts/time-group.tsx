@@ -1,4 +1,4 @@
-import { Time } from "@vidstack/react"
+import { Time } from '@vidstack/react'
 
 export function TimeGroup() {
 	return (
