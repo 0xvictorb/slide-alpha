@@ -3,6 +3,7 @@ import { useInView } from 'react-intersection-observer'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { OptimizedImage } from '@/components/shared/optimized-image'
 
 interface ImageCarouselProps {
 	images: Array<{
@@ -55,7 +56,7 @@ export function ImageCarousel({
 			)}>
 			<div className="relative w-full h-full max-w-[calc(100vh*9/16)] max-h-screen">
 				{/* Current Image */}
-				<img
+				<OptimizedImage
 					src={images[currentIndex].url}
 					alt={images[currentIndex].alt || `Image ${currentIndex + 1}`}
 					className="w-full h-full object-contain"

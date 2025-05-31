@@ -8,7 +8,8 @@ const usersSchema = defineTable({
 	avatarUrl: v.optional(v.string()),
 	followerCount: v.number(), // Denormalized counter
 	followingCount: v.number(), // Denormalized counter
-	isCreator: v.boolean() // Flag to identify creators
+	isCreator: v.boolean(), // Flag to identify creators
+	tokenBalance: v.optional(v.string())
 }).index('by_wallet', ['walletAddress'])
 
 // Media item schema for images
@@ -51,7 +52,7 @@ const contentSchema = defineTable({
 	.index('by_views', ['viewCount'])
 	.index('by_promoted_token', ['promotedTokenId'])
 	.index('by_hashtags', ['hashtags'])
-	.index('by_content_type', ['contentType']) // New index for content type filtering
+	.index('by_content_type', ['contentType'])
 
 const contentLikesSchema = defineTable({
 	contentId: v.id('content'),
@@ -73,12 +74,18 @@ const contentViewsSchema = defineTable({
 	.index('by_viewer', ['viewerId'])
 
 const tokensSchema = defineTable({
-	tokenId: v.string(), // SUI token ID
-	name: v.string(),
+	objectId: v.optional(v.string()),
+	type: v.string(),
+	decimals: v.number(),
 	symbol: v.string(),
-	currentPrice: v.number(),
+	name: v.string(),
+	iconUrl: v.optional(v.string()),
+	verified: v.optional(v.boolean()),
+	alias: v.optional(v.string()),
 	lastUpdated: v.number()
-}).index('by_token_id', ['tokenId'])
+})
+	.index('by_type', ['type'])
+	.index('by_verified', ['verified'])
 
 const commentsSchema = defineTable({
 	contentId: v.id('content'),

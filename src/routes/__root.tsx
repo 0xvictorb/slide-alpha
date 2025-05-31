@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import useCurrentAccountAddress from '@/hooks/use-current-account-address'
 import useWalletAccountList from '@/hooks/use-wallet-account-list'
 import { RootLayout } from '@/components/layout/root-layout'
+import { useTokens } from '@/hooks/use-tokens'
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -30,6 +31,7 @@ const { networkConfig } = createNetworkConfig({
 const GlobalHooks = () => {
 	useCurrentAccountAddress()
 	useWalletAccountList()
+	useTokens()
 
 	return null
 }

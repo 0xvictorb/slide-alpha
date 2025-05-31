@@ -2,26 +2,12 @@ import { useCurrentAccount, useSuiClient } from '@mysten/dapp-kit'
 import { SuiClient } from '@mysten/sui/client'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { fromDecimals } from '@/lib/number'
+import { useTokens } from './use-tokens'
 import { useTokensFiatPrice } from './use-tokens-fiat-price'
 import { getCoinMetadata } from '@/lib/sui'
-import { SUI_TYPE_ARG } from '@mysten/sui/utils'
+import type { TokenBalance } from '@/types/token'
 
-export interface TokenBalance {
-	symbol: string
-	balance: string
-	coinType: string
-	formattedBalance: string
-	name?: string
-	decimals?: number
-	iconUrl?: string | null
-	usdPrice?: number
-	usdValue?: number
-}
-
-async function getAllTokenBalances(
-	client: SuiClient,
-	address: string
-): Promise<TokenBalance[]> {
+async function getAllTokenBalances(client: SuiClient, address: string) {
 	const allCoins = await client.getAllCoins({
 		owner: address
 	})
@@ -33,16 +19,15 @@ async function getAllTokenBalances(
 	})
 
 	return Array.from(balanceMap.entries()).map(([coinType, balance]) => ({
-		symbol: coinType.split('::').pop() || coinType,
-		balance: balance.toString(),
-		coinType,
-		formattedBalance: '0' // Will be updated with metadata
+		coinType: coinType.split('::').pop() || coinType,
+		balance: balance.toString()
 	}))
 }
 
 export function useTokenBalances() {
 	const account = useCurrentAccount()
 	const client = useSuiClient()
+	const { tokens } = useTokens()
 
 	const balancesQuery = useQuery({
 		queryKey: ['token-balances', account?.address],
@@ -64,31 +49,29 @@ export function useTokenBalances() {
 		}))
 	})
 
-	const balancesWithMetadata = balancesQuery.data?.map((balance, index) => {
-		const metadata = metadataQueries[index]?.data
+	const tokensWithBalances = tokens?.map((token, index) => {
+		const balance = balancesQuery.data?.find((b) => b.coinType === token.type)
 		const formattedBalance =
-			fromDecimals(balance.balance, metadata?.decimals) || '0'
-		const usdPrice = tokenPrices?.[balance.symbol]?.price
-		const usdValue = usdPrice ? Number(formattedBalance) * usdPrice : undefined
+			fromDecimals(balance?.balance || '0', token?.decimals || 0) || '0'
+		const usdPrice = tokenPrices?.[index]?.price
+		const usdValue = usdPrice
+			? Number(formattedBalance) * Number(usdPrice)
+			: undefined
 
 		return {
-			...balance,
+			...token,
+			...metadataQueries[index]?.data,
+			iconUrl: metadataQueries[index]?.data?.iconUrl || token.iconUrl,
+			balance: balance?.balance || '0',
 			formattedBalance,
-			iconUrl:
-				balance.coinType === SUI_TYPE_ARG ? '/sui.jpeg' : metadata?.iconUrl,
-			name: metadata?.name,
-			decimals: metadata?.decimals,
-			usdPrice,
-			usdValue
-		}
+			usdValue: usdValue || 0,
+			usdPrice: usdPrice || 0
+		} satisfies TokenBalance
 	})
 
 	return {
-		data: balancesWithMetadata
-			?.filter((b) => b.balance && Number(b.balance) > 0)
-			.sort((a, b) => Number(b.usdValue || 0) - Number(a.usdValue || 0)),
-		isLoading:
-			balancesQuery.isLoading || metadataQueries.some((q) => q.isLoading),
-		isError: balancesQuery.isError || metadataQueries.some((q) => q.isError)
+		data: tokensWithBalances,
+		isLoading: balancesQuery.isLoading,
+		isError: balancesQuery.isError
 	}
 }

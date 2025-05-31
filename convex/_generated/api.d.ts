@@ -15,6 +15,8 @@ import type {
 } from "convex/server";
 import type * as cloudinary from "../cloudinary.js";
 import type * as content from "../content.js";
+import type * as crons from "../crons.js";
+import type * as tokens from "../tokens.js";
 import type * as users from "../users.js";
 
 /**
@@ -28,6 +30,8 @@ import type * as users from "../users.js";
 declare const fullApi: ApiFromModules<{
   cloudinary: typeof cloudinary;
   content: typeof content;
+  crons: typeof crons;
+  tokens: typeof tokens;
   users: typeof users;
 }>;
 export declare const api: FilterApi<
