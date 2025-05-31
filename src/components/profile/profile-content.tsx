@@ -9,34 +9,51 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { formatAddress } from '@mysten/sui/utils'
-import { Users, UserPlus, Edit3, Check, X, Play } from 'lucide-react'
+import { Users, UserPlus, Edit3, Check, X, Play, UserCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { ContentCard } from './content-card'
 import { ProfileSkeleton } from './profile-skeleton'
 import { ContentGridSkeleton } from './content-grid-skeleton'
 
-export function ProfileContent() {
+interface ProfileContentProps {
+	profileAddress: string
+}
+
+export function ProfileContent({ profileAddress }: ProfileContentProps) {
 	const account = useCurrentAccount()
 	const [isEditingName, setIsEditingName] = useState(false)
 	const [isEditingBio, setIsEditingBio] = useState(false)
 	const [editName, setEditName] = useState('')
 	const [editBio, setEditBio] = useState('')
 
+	// Check if viewing own profile
+	const isOwnProfile = account?.address === profileAddress
+
 	// Queries
-	const user = useQuery(
-		api.users.getCurrentUser,
-		account?.address ? { walletAddress: account.address } : 'skip'
-	)
-	const userContent = useQuery(
-		api.users.getUserContent,
-		account?.address ? { walletAddress: account.address } : 'skip'
+	const user = useQuery(api.users.getUserByWallet, {
+		walletAddress: profileAddress
+	})
+	const userContent = useQuery(api.users.getUserContent, {
+		walletAddress: profileAddress
+	})
+
+	// Follow status query (only if not own profile)
+	const isFollowing = useQuery(
+		api.users.isFollowing,
+		!isOwnProfile && account?.address
+			? {
+					followerWalletAddress: account.address,
+					followingWalletAddress: profileAddress
+				}
+			: 'skip'
 	)
 
 	// Mutations
 	const updateProfile = useMutation(api.users.updateProfile)
+	const toggleFollow = useMutation(api.users.toggleFollow)
 
 	const handleSaveName = async () => {
-		if (!account?.address) return
+		if (!account?.address || !isOwnProfile) return
 
 		try {
 			await updateProfile({
@@ -52,7 +69,7 @@ export function ProfileContent() {
 	}
 
 	const handleSaveBio = async () => {
-		if (!account?.address) return
+		if (!account?.address || !isOwnProfile) return
 
 		try {
 			await updateProfile({
@@ -63,6 +80,21 @@ export function ProfileContent() {
 			toast.success('Bio updated successfully')
 		} catch (error) {
 			toast.error('Failed to update bio')
+			console.error(error)
+		}
+	}
+
+	const handleToggleFollow = async () => {
+		if (!account?.address || isOwnProfile) return
+
+		try {
+			const nowFollowing = await toggleFollow({
+				followerWalletAddress: account.address,
+				followingWalletAddress: profileAddress
+			})
+			toast.success(nowFollowing ? 'Now following' : 'Unfollowed')
+		} catch (error) {
+			toast.error('Failed to toggle follow')
 			console.error(error)
 		}
 	}
@@ -94,9 +126,35 @@ export function ProfileContent() {
 	return (
 		<div className="container max-w-4xl p-4 space-y-8">
 			{/* Header */}
-			<div>
-				<h1 className="text-2xl font-bold">Profile</h1>
-				<p className="text-muted-foreground">Manage your profile and content</p>
+			<div className="flex items-center justify-between">
+				<div>
+					<h1 className="text-2xl font-bold">
+						{isOwnProfile ? 'My Profile' : `${user.name}'s Profile`}
+					</h1>
+					<p className="text-muted-foreground">
+						{isOwnProfile
+							? 'Manage your profile and content'
+							: 'View profile and content'}
+					</p>
+				</div>
+				{!isOwnProfile && account?.address && (
+					<Button
+						onClick={handleToggleFollow}
+						variant={isFollowing ? 'outline' : 'default'}
+						size="sm">
+						{isFollowing ? (
+							<>
+								<UserCheck className="h-4 w-4 mr-2" />
+								Following
+							</>
+						) : (
+							<>
+								<UserPlus className="h-4 w-4 mr-2" />
+								Follow
+							</>
+						)}
+					</Button>
+				)}
 			</div>
 
 			{/* User Information Card */}
@@ -120,9 +178,7 @@ export function ProfileContent() {
 									Wallet Address
 								</label>
 								<div className="mt-1 font-mono text-sm bg-muted p-2 rounded-md">
-									{account?.address
-										? formatAddress(account.address)
-										: 'Not connected'}
+									{formatAddress(profileAddress)}
 								</div>
 							</div>
 
@@ -131,7 +187,7 @@ export function ProfileContent() {
 								<label className="text-sm font-medium text-muted-foreground">
 									Name
 								</label>
-								{isEditingName ? (
+								{isEditingName && isOwnProfile ? (
 									<div className="mt-1 flex gap-2">
 										<Input
 											value={editName}
@@ -155,12 +211,14 @@ export function ProfileContent() {
 								) : (
 									<div className="mt-1 flex items-center gap-2">
 										<span className="flex-1">{user.name}</span>
-										<Button
-											size="sm"
-											variant="ghost"
-											onClick={startEditingName}>
-											<Edit3 className="h-4 w-4" />
-										</Button>
+										{isOwnProfile && (
+											<Button
+												size="sm"
+												variant="ghost"
+												onClick={startEditingName}>
+												<Edit3 className="h-4 w-4" />
+											</Button>
+										)}
 									</div>
 								)}
 							</div>
@@ -170,7 +228,7 @@ export function ProfileContent() {
 								<label className="text-sm font-medium text-muted-foreground">
 									Description
 								</label>
-								{isEditingBio ? (
+								{isEditingBio && isOwnProfile ? (
 									<div className="mt-1 space-y-2">
 										<Textarea
 											value={editBio}
@@ -195,9 +253,14 @@ export function ProfileContent() {
 										<span className="flex-1 text-sm text-muted-foreground">
 											{user.bio || 'No description yet...'}
 										</span>
-										<Button size="sm" variant="ghost" onClick={startEditingBio}>
-											<Edit3 className="h-4 w-4" />
-										</Button>
+										{isOwnProfile && (
+											<Button
+												size="sm"
+												variant="ghost"
+												onClick={startEditingBio}>
+												<Edit3 className="h-4 w-4" />
+											</Button>
+										)}
 									</div>
 								)}
 							</div>
@@ -239,7 +302,9 @@ export function ProfileContent() {
 			<Card>
 				<CardHeader className="pb-4">
 					<div className="flex items-center justify-between">
-						<CardTitle>Created Videos</CardTitle>
+						<CardTitle>
+							{isOwnProfile ? 'Created Videos' : `${user.name}'s Videos`}
+						</CardTitle>
 						<Badge variant="secondary">{userContent?.length || 0} videos</Badge>
 					</div>
 				</CardHeader>
@@ -250,14 +315,26 @@ export function ProfileContent() {
 						<div className="text-center py-12">
 							<div className="text-muted-foreground mb-4">
 								<Play className="h-12 w-12 mx-auto mb-2" />
-								<p>No videos created yet</p>
-								<p className="text-sm">Start creating content to see it here</p>
+								<p>
+									{isOwnProfile
+										? 'No videos created yet'
+										: `${user.name} hasn't created any videos yet`}
+								</p>
+								{isOwnProfile && (
+									<p className="text-sm">
+										Start creating content to see it here
+									</p>
+								)}
 							</div>
 						</div>
 					) : (
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 							{userContent.map((content) => (
-								<ContentCard key={content._id} content={content} />
+								<ContentCard
+									key={content._id}
+									content={content}
+									profileAddress={profileAddress}
+								/>
 							))}
 						</div>
 					)}

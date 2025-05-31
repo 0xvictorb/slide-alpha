@@ -10,17 +10,20 @@ export function BottomNav() {
 		{
 			icon: Home,
 			label: 'Home',
-			href: '/'
+			href: '/',
+			isActive: currentPath === '/'
 		},
 		{
 			icon: PlusSquare,
 			label: 'Create',
-			href: '/create'
+			href: '/create',
+			isActive: currentPath === '/create'
 		},
 		{
 			icon: User,
 			label: 'Profile',
-			href: '/profile'
+			href: '/profile',
+			isActive: currentPath.startsWith('/profile')
 		}
 	]
 
@@ -35,7 +38,7 @@ export function BottomNav() {
 							className={cn(
 								'flex flex-col items-center gap-1',
 								'text-muted-foreground transition-colors hover:text-primary',
-								currentPath === item.href && 'text-primary'
+								item.isActive && 'text-primary'
 							)}>
 							<item.icon className="h-6 w-6" />
 							<span className="text-xs">{item.label}</span>

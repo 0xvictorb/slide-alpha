@@ -3,16 +3,19 @@ import { useQuery, useMutation } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import type { Id } from '@convex/_generated/dataModel'
 import { useNavigate } from '@tanstack/react-router'
+import { Button } from '@/components/ui/button'
+import { ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { VideoDisplay } from './video-display'
-import { ImageCarousel } from './image-carousel'
-import { EngagementActions } from './engagement-actions'
-import { TokenInfo } from './token-info'
-import { UserProfile } from './user-profile'
-import { Hashtags } from './hashtags'
-import { SplashScreen } from '@/components/splash'
+import { VideoDisplay } from '../feed/video-display'
+import { ImageCarousel } from '../feed/image-carousel'
+import { EngagementActions } from '../feed/engagement-actions'
+import { TokenInfo } from '../feed/token-info'
+import { UserProfile } from '../feed/user-profile'
+import { Hashtags } from '../feed/hashtags'
 
-interface ContentFeedProps {
+interface UserContentFeedProps {
+	profileAddress: string
+	startContentId: string
 	className?: string
 }
 
@@ -38,15 +41,16 @@ interface ContentMedia {
 	}
 }
 
-export function ContentFeed({ className }: ContentFeedProps) {
+export function UserContentFeed({
+	profileAddress,
+	startContentId,
+	className
+}: UserContentFeedProps) {
+	const navigate = useNavigate()
 	const [currentIndex, setCurrentIndex] = useState(0)
 	const [contentList, setContentList] = useState<ContentMedia[]>([])
 	const [isLoading, setIsLoading] = useState(false)
-	const [cursor, setCursor] = useState<string | null>(null)
-	const [hasMore, setHasMore] = useState(true)
-	const [shouldLoadMore, setShouldLoadMore] = useState(false)
-	const [showSplash, setShowSplash] = useState(true)
-	const [audioEnabled, setAudioEnabled] = useState(false)
+	const [audioEnabled, setAudioEnabled] = useState(true)
 
 	// Enhanced drag/swipe state for TikTok-like experience
 	const [dragOffset, setDragOffset] = useState(0)
@@ -57,112 +61,74 @@ export function ContentFeed({ className }: ContentFeedProps) {
 	// Refs
 	const containerRef = useRef<HTMLDivElement>(null)
 	const incrementView = useMutation(api.content.incrementView)
-	const navigate = useNavigate()
 
 	// Animation constants
 	const CONTAINER_HEIGHT =
 		typeof window !== 'undefined' ? window.innerHeight - 80 : 720
-	const DRAG_THRESHOLD = 100 // Minimum drag distance to trigger navigation
-	const MAX_DRAG_DISTANCE = CONTAINER_HEIGHT * 0.8 // Maximum drag distance
+	const DRAG_THRESHOLD = 100
+	const MAX_DRAG_DISTANCE = CONTAINER_HEIGHT * 0.8
 
-	// Always load initial content, regardless of splash screen state
-	const initialContent = useQuery(api.content.getPaginatedContent, {
-		paginationOpts: { numItems: 5, cursor: null },
-		preferVideos: true
+	// Load user's content
+	const userContent = useQuery(api.users.getUserContent, {
+		walletAddress: profileAddress
 	})
 
-	// Load more content when shouldLoadMore is true
-	const loadMoreContent = useQuery(
-		api.content.getPaginatedContent,
-		shouldLoadMore && cursor
-			? {
-					paginationOpts: { numItems: 5, cursor },
-					preferVideos: true
+	// Format content item helper
+	const formatContentItem = useCallback(
+		(content: any): ContentMedia => {
+			const baseContent = {
+				id: content._id,
+				promotedTokenId: content.promotedTokenId,
+				creatorAddress: profileAddress,
+				title: content.title,
+				description: content.description,
+				hashtags: content.hashtags,
+				author: {
+					id: content.authorId,
+					name: content.authorName || 'Anonymous',
+					avatarUrl: content.authorAvatarUrl,
+					walletAddress: profileAddress
 				}
-			: 'skip'
+			}
+
+			if (content.images) {
+				return {
+					...baseContent,
+					mediaUrl: content.images?.[0]?.cloudinaryUrl || '',
+					thumbnailUrl: content.images?.[0]?.cloudinaryUrl || '',
+					resourceType: 'image' as const,
+					images: content.images.map((image: any) => ({
+						url: image.cloudinaryUrl,
+						alt: image.cloudinaryPublicId
+					}))
+				}
+			} else {
+				return {
+					...baseContent,
+					mediaUrl: content.video?.cloudinaryUrl || '',
+					thumbnailUrl: content.video?.thumbnailUrl || '',
+					resourceType: 'video' as const
+				}
+			}
+		},
+		[profileAddress]
 	)
 
-	// Content stats for current item - only load if splash is complete
-	const currentContent = contentList[currentIndex]
-
-	// Handle splash completion
-	const handleSplashComplete = () => {
-		setShowSplash(false)
-		setAudioEnabled(true) // Enable audio after user interaction
-	}
-
-	// Format content item helper
-	const formatContentItem = useCallback((content: any): ContentMedia => {
-		const baseContent = {
-			id: content._id,
-			promotedTokenId: content.promotedTokenId,
-			creatorAddress: content.authorWalletAddress || '',
-			title: content.title,
-			description: content.description,
-			hashtags: content.hashtags,
-			author: {
-				id: content.authorId,
-				name: content.authorName || 'Anonymous',
-				avatarUrl: content.authorAvatarUrl,
-				walletAddress: content.authorWalletAddress || ''
-			}
-		}
-
-		if (content.images) {
-			return {
-				...baseContent,
-				mediaUrl: content.images?.[0]?.cloudinaryUrl || '',
-				thumbnailUrl: content.images?.[0]?.cloudinaryUrl || '',
-				resourceType: 'image' as const,
-				images: content.images.map((image: any) => ({
-					url: image.cloudinaryUrl,
-					alt: image.cloudinaryPublicId
-				}))
-			}
-		} else {
-			return {
-				...baseContent,
-				mediaUrl: content.video?.cloudinaryUrl || '',
-				thumbnailUrl: content.video?.thumbnailUrl || '',
-				resourceType: 'video' as const
-			}
-		}
-	}, [])
-
-	// Initialize content list - happens regardless of splash screen
+	// Initialize content list and find starting content
 	useEffect(() => {
-		if (initialContent?.page && contentList.length === 0) {
-			const formattedContent = initialContent.page.map(formatContentItem)
+		if (userContent && contentList.length === 0) {
+			const formattedContent = userContent.map(formatContentItem)
 			setContentList(formattedContent)
-			setCursor(initialContent.continueCursor)
-			setHasMore(!initialContent.isDone)
-		}
-	}, [initialContent, contentList.length, formatContentItem])
 
-	// Handle loading more content
-	useEffect(() => {
-		if (loadMoreContent?.page && shouldLoadMore) {
-			const formattedContent = loadMoreContent.page.map(formatContentItem)
-			setContentList((prev) => [...prev, ...formattedContent])
-			setCursor(loadMoreContent.continueCursor)
-			setHasMore(!loadMoreContent.isDone)
-			setIsLoading(false)
-			setShouldLoadMore(false)
+			// Find the index of the starting content
+			const startIndex = formattedContent.findIndex(
+				(content) => content.id === startContentId
+			)
+			if (startIndex !== -1) {
+				setCurrentIndex(startIndex)
+			}
 		}
-	}, [loadMoreContent, shouldLoadMore, formatContentItem])
-
-	// Load more content function
-	const loadMoreIfNeeded = useCallback(() => {
-		if (
-			currentIndex >= contentList.length - 2 &&
-			hasMore &&
-			!isLoading &&
-			cursor
-		) {
-			setIsLoading(true)
-			setShouldLoadMore(true)
-		}
-	}, [currentIndex, contentList.length, hasMore, isLoading, cursor])
+	}, [userContent, contentList.length, formatContentItem, startContentId])
 
 	// Navigation with smooth transition
 	const navigateToIndex = useCallback(
@@ -174,14 +140,11 @@ export function ContentFeed({ className }: ContentFeedProps) {
 			setCurrentIndex(newIndex)
 			setDragOffset(0)
 
-			// Reset transition state after animation
 			setTimeout(() => {
 				setIsTransitioning(false)
 			}, 300)
-
-			loadMoreIfNeeded()
 		},
-		[contentList.length, isTransitioning, loadMoreIfNeeded]
+		[contentList.length, isTransitioning]
 	)
 
 	const navigateToNext = useCallback(() => {
@@ -192,40 +155,35 @@ export function ContentFeed({ className }: ContentFeedProps) {
 		navigateToIndex(currentIndex - 1)
 	}, [currentIndex, navigateToIndex])
 
-	// Enhanced drag handlers for smooth experience
+	// Enhanced drag handlers
 	const handleDragStart = useCallback(
 		(clientY: number) => {
-			if (showSplash || isTransitioning) return
+			if (isTransitioning) return
 			setStartY(clientY)
 			setIsDragging(true)
 			setDragOffset(0)
 		},
-		[showSplash, isTransitioning]
+		[isTransitioning]
 	)
 
 	const handleDragMove = useCallback(
 		(clientY: number) => {
-			if (!isDragging || showSplash || isTransitioning) return
+			if (!isDragging || isTransitioning) return
 
 			const rawOffset = clientY - startY
-
-			// Apply resistance at boundaries
 			let offset = rawOffset
+
 			if (currentIndex === 0 && rawOffset > 0) {
-				// Resistance when trying to go before first item
 				offset = rawOffset * 0.3
 			} else if (currentIndex === contentList.length - 1 && rawOffset < 0) {
-				// Resistance when trying to go after last item
 				offset = rawOffset * 0.3
 			}
 
-			// Limit maximum drag distance
 			offset = Math.max(-MAX_DRAG_DISTANCE, Math.min(MAX_DRAG_DISTANCE, offset))
 			setDragOffset(offset)
 		},
 		[
 			isDragging,
-			showSplash,
 			isTransitioning,
 			startY,
 			currentIndex,
@@ -235,30 +193,26 @@ export function ContentFeed({ className }: ContentFeedProps) {
 	)
 
 	const handleDragEnd = useCallback(() => {
-		if (!isDragging || showSplash || isTransitioning) return
+		if (!isDragging || isTransitioning) return
 
 		setIsDragging(false)
 
 		const dragDistance = Math.abs(dragOffset)
 		const dragDirection = dragOffset > 0 ? 'down' : 'up'
 
-		// Determine if drag was significant enough to navigate
 		if (dragDistance > DRAG_THRESHOLD) {
 			if (dragDirection === 'up' && currentIndex < contentList.length - 1) {
 				navigateToNext()
 			} else if (dragDirection === 'down' && currentIndex > 0) {
 				navigateToPrevious()
 			} else {
-				// Snap back to current position
 				setDragOffset(0)
 			}
 		} else {
-			// Snap back to current position
 			setDragOffset(0)
 		}
 	}, [
 		isDragging,
-		showSplash,
 		isTransitioning,
 		dragOffset,
 		currentIndex,
@@ -273,7 +227,7 @@ export function ContentFeed({ className }: ContentFeedProps) {
 	}
 
 	const handleTouchMove = (e: React.TouchEvent) => {
-		e.preventDefault() // Prevent scroll
+		e.preventDefault()
 		handleDragMove(e.touches[0].clientY)
 	}
 
@@ -317,8 +271,6 @@ export function ContentFeed({ className }: ContentFeedProps) {
 
 	// Keyboard navigation
 	useEffect(() => {
-		if (showSplash) return
-
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === 'ArrowUp') {
 				e.preventDefault()
@@ -326,34 +278,47 @@ export function ContentFeed({ className }: ContentFeedProps) {
 			} else if (e.key === 'ArrowDown') {
 				e.preventDefault()
 				navigateToNext()
+			} else if (e.key === 'Escape') {
+				e.preventDefault()
+				handleBackToProfile()
 			}
 		}
 
 		window.addEventListener('keydown', handleKeyDown)
 		return () => window.removeEventListener('keydown', handleKeyDown)
-	}, [navigateToNext, navigateToPrevious, showSplash])
+	}, [navigateToNext, navigateToPrevious])
 
-	// Handle media view (increment view count)
+	// Handle media view
 	const handleMediaView = useCallback(async () => {
-		if (currentContent && !showSplash) {
+		const currentContent = contentList[currentIndex]
+		if (currentContent) {
 			try {
 				await incrementView({ contentId: currentContent.id })
 			} catch (error) {
 				console.error('Failed to increment view:', error)
 			}
 		}
-	}, [currentContent, incrementView, showSplash])
+	}, [contentList, currentIndex, incrementView])
 
 	// Auto-trigger view increment when content changes
 	useEffect(() => {
-		if (currentContent && !showSplash && !isDragging) {
+		const currentContent = contentList[currentIndex]
+		if (currentContent && !isDragging) {
 			const timer = setTimeout(() => {
 				handleMediaView()
 			}, 1000)
 
 			return () => clearTimeout(timer)
 		}
-	}, [currentContent, handleMediaView, showSplash, isDragging])
+	}, [contentList, currentIndex, handleMediaView, isDragging])
+
+	// Handle back to profile
+	const handleBackToProfile = () => {
+		navigate({
+			to: '/profile/$address',
+			params: { address: profileAddress }
+		})
+	}
 
 	// Calculate transform for content container
 	const getTransformY = () => {
@@ -365,7 +330,7 @@ export function ContentFeed({ className }: ContentFeedProps) {
 	// Render content item
 	const renderContentItem = (content: ContentMedia, index: number) => {
 		const isActive = index === currentIndex
-		const shouldRender = Math.abs(index - currentIndex) <= 1 // Render current and adjacent items
+		const shouldRender = Math.abs(index - currentIndex) <= 1
 
 		if (!shouldRender) return null
 
@@ -377,7 +342,6 @@ export function ContentFeed({ className }: ContentFeedProps) {
 					height: `${CONTAINER_HEIGHT}px`,
 					top: `${index * CONTAINER_HEIGHT}px`
 				}}>
-				{/* Media content */}
 				<div className="relative w-full h-full">
 					{content.resourceType === 'video' ? (
 						<VideoDisplay
@@ -386,7 +350,6 @@ export function ContentFeed({ className }: ContentFeedProps) {
 							onPlay={isActive ? handleMediaView : () => {}}
 							audioEnabled={audioEnabled && isActive}
 							className="w-full h-full"
-							showEnhancedControls={isActive}
 						/>
 					) : (
 						<ImageCarousel
@@ -406,9 +369,21 @@ export function ContentFeed({ className }: ContentFeedProps) {
 					{/* Content overlay - only show for active content */}
 					{isActive && (
 						<>
+							{/* Back button at the top */}
+							<div className="absolute top-4 left-4 z-20">
+								<Button
+									onClick={handleBackToProfile}
+									variant="ghost"
+									size="sm"
+									className="bg-black/20 backdrop-blur-sm text-white hover:bg-black/40">
+									<ArrowLeft className="h-4 w-4 mr-2" />
+									Back to Profile
+								</Button>
+							</div>
+
 							{/* Token information at the top */}
 							{content.promotedTokenId && (
-								<div className="absolute top-4 left-4 right-4 z-10">
+								<div className="absolute top-4 right-4 left-1/2 z-10">
 									<TokenInfo
 										tokenId={content.promotedTokenId}
 										className="w-full"
@@ -428,12 +403,7 @@ export function ContentFeed({ className }: ContentFeedProps) {
 								<div className="mb-3">
 									<UserProfile
 										author={content.author}
-										onProfileClick={() => {
-											navigate({
-												to: '/profile/$address',
-												params: { address: content.author.walletAddress }
-											})
-										}}
+										onProfileClick={handleBackToProfile}
 									/>
 								</div>
 
@@ -458,7 +428,6 @@ export function ContentFeed({ className }: ContentFeedProps) {
 									<Hashtags
 										hashtags={content.hashtags}
 										onHashtagClick={(hashtag) => {
-											// TODO: Navigate to hashtag search
 											console.log('Search hashtag:', hashtag)
 										}}
 									/>
@@ -468,47 +437,6 @@ export function ContentFeed({ className }: ContentFeedProps) {
 					)}
 				</div>
 			</div>
-		)
-	}
-
-	// Show splash screen first if not completed
-	if (showSplash) {
-		return (
-			<>
-				<SplashScreen
-					onComplete={handleSplashComplete}
-					contentLoaded={contentList.length > 0}
-				/>
-				{/* Preload content in background while splash is showing */}
-				{contentList.length > 0 && (
-					<div className="absolute inset-0 opacity-0 pointer-events-none">
-						<div className="relative w-full h-full">
-							{currentContent?.resourceType === 'video' ? (
-								<VideoDisplay
-									videoUrl={currentContent.mediaUrl}
-									thumbnailUrl={currentContent.thumbnailUrl}
-									onPlay={() => {}}
-									audioEnabled={false}
-									className="w-full h-full"
-								/>
-							) : currentContent ? (
-								<ImageCarousel
-									images={
-										currentContent.images || [
-											{
-												url: currentContent.mediaUrl,
-												alt: 'Content'
-											}
-										]
-									}
-									onView={() => {}}
-									className="w-full h-full"
-								/>
-							) : null}
-						</div>
-					</div>
-				)}
-			</>
 		)
 	}
 

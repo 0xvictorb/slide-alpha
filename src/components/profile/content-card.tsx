@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { Play, Clock, Eye } from 'lucide-react'
+import { useNavigate } from '@tanstack/react-router'
 
 interface ContentCardProps {
 	content: {
@@ -25,10 +26,14 @@ interface ContentCardProps {
 		viewCount: number
 		lastViewedAt?: number
 		promotedTokenId?: string
+		authorId: string
 	}
+	profileAddress: string
 }
 
-export function ContentCard({ content }: ContentCardProps) {
+export function ContentCard({ content, profileAddress }: ContentCardProps) {
+	const navigate = useNavigate()
+
 	const getThumbnail = () => {
 		if (content.contentType === 'video' && content.video) {
 			return content.video.thumbnailUrl
@@ -52,8 +57,20 @@ export function ContentCard({ content }: ContentCardProps) {
 		return `${mins}:${secs.toString().padStart(2, '0')}`
 	}
 
+	const handleClick = () => {
+		navigate({
+			to: '/profile/$address/content/$contentId',
+			params: {
+				address: profileAddress,
+				contentId: content._id
+			}
+		})
+	}
+
 	return (
-		<div className="group relative bg-muted rounded-lg overflow-hidden aspect-[9/16] cursor-pointer hover:scale-105 transition-transform">
+		<div
+			className="group relative bg-muted rounded-lg overflow-hidden aspect-[9/16] cursor-pointer hover:scale-105 transition-transform"
+			onClick={handleClick}>
 			{/* Thumbnail */}
 			<img
 				src={getThumbnail()}
