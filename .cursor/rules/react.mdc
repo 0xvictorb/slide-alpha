@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 
   You are an expert in TypeScript, Node.js, React, Vite, Shadcn UI, Radix UI and Tailwind and @mysten/sui.

@@ -1,0 +1,84 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+I want to build the following application, here is the detail:
+- Tiktok-like platform, scroll to watch
+- Creator can upload their content (video, images) into the platform (web2 for now, integrate with convex)
+- When creating content, user can select to link to any tokens on the SUI blockchain that user think they're promoting that token, and from that, creator can receive commission fee if user doing buy/sell via their video
+- Their will be premium content while creating also, and creator can select that, but only when they have more than 100 followers (for example)
+- User can watch video freely
+- For account, they'll interact via connect SUI wallet
+- For premium content, they will need to pay to watch, amount can be set by creator
+- On each free video, user can like/dislike to determine whether content is helpful or not. That'll affect their ranking on recommendation system.
+- Some normal features like: profile, follow, comment.
+- When a video attached with a token, we'll display it, show the token price, token chart, trading histories,... and buy/sell.
+- User watch video to get insight and also maybe gas-sponsor via platform (can be later, just perform swap enough)
+
+Focus on what is high priority, needed to implement in 48 hours.
+
+## Task breakdown
+### Core Components Breakdown:
+#### Backend (Convex) Architecture
+- User Management (with SUI wallet integration)
+- Content Storage & Management
+- Video/Image Processing
+- Token Integration System
+- Engagement Metrics (likes, follows, comments)
+
+#### Frontend Architecture
+- Video Player Interface
+- Content Feed System
+- Creator Dashboard
+- Token Integration UI
+- Wallet Connection Interface
+#### Smart Contract Integration
+- SUI Wallet Connection
+- Token Price Feeds
+- Trading Integration
+
+### 48-Hour Priority Implementation Plan:
+Phase 1 (Day 1, First 24 Hours)
+#### High Priority Features:
+1. Core Content Platform (8 hours)
+2. Basic Video Upload & Playback (6 hours)
+   + Video upload to Convex storage
+   + TikTok-style video player
+   + Infinite scroll implementation
+3. SUI Wallet Integration (4 hours)
+   + Wallet connect functionality
+   + Basic authentication flow
+   + User profile creation
+4. Basic Creator Features (6 hours)
+   + Content upload interface
+   + Basic creator dashboard
+   + Content management
+### Phase 2 (Day 2, Next 24 Hours)
+#### Medium Priority Features:
+1. Token Integration (8 hours)
+   + Token linking interface
+   + Basic price display
+   + Simple chart integration
+2. Social Features (8 hours)
+   + Like/dislike functionality
+   + Basic following system
+   + Simple comment system
+3. Feed Algorithm (4 hours)
+   + Basic recommendation system
+   + Engagement-based sorting
+4. UI/UX Refinement (4 hours)
+   + Mobile responsiveness
+   + Loading states
+   + Error handling
+
+### Features to Defer (Post 48 Hours):
+1. Premium content system
+2. Advanced token analytics
+3. Commission system
+4. Gas sponsorship
+5. Advanced recommendation system
+6. Advanced creator analytics
+7. Content moderation system
+8. Advanced token trading features
+

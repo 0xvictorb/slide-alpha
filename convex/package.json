@@ -1,0 +1,7 @@
+{
+	"name": "slide-alpha-convex",
+	"private": true,
+	"dependencies": {
+		"cloudinary": "^2.0.1"
+	}
+}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
 	ConnectModal,
 	useCurrentAccount,
@@ -7,6 +7,8 @@ import {
 } from '@mysten/dapp-kit'
 import { formatAddress } from '@mysten/sui/utils'
 import { LogOut, SwitchCamera, User, Wallet } from 'lucide-react'
+import { useMutation } from 'convex/react'
+import { api } from '../../../convex/_generated/api'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -19,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useAtomValue } from 'jotai'
 import { walletAccountListAtom } from '@/atoms/account.atom'
+import { toast } from 'sonner'
 
 const WalletButton = () => {
 	const currentAccount = useCurrentAccount()
@@ -26,8 +29,30 @@ const WalletButton = () => {
 	const { mutate: switchAccount } = useSwitchAccount()
 	const [open, setOpen] = useState(false)
 	const accounts = useAtomValue(walletAccountListAtom)
+	const connectWalletMutation = useMutation(api.users.connectWallet)
 
-	console.log(accounts)
+	// Handle wallet connection
+	useEffect(() => {
+		const handleWalletConnection = async () => {
+			if (currentAccount?.address) {
+				try {
+					const result = await connectWalletMutation({
+						walletAddress: currentAccount.address,
+						name: currentAccount.label // Use wallet label as name if available
+					})
+
+					if (result.isNewUser) {
+						toast.success('Welcome to Slide Alpha! 🎉')
+					}
+				} catch (error) {
+					console.error('Failed to connect wallet:', error)
+					toast.error('Failed to connect wallet. Please try again.')
+				}
+			}
+		}
+
+		handleWalletConnection()
+	}, [currentAccount?.address, currentAccount?.label, connectWalletMutation])
 
 	if (currentAccount) {
 		return (
@@ -44,7 +69,9 @@ const WalletButton = () => {
 					{accounts.map((account) => (
 						<DropdownMenuItem
 							key={account.address}
-							onClick={() => switchAccount({ account })}
+							onClick={() => {
+								switchAccount({ account })
+							}}
 							className="flex items-center justify-between">
 							<div className="flex items-center gap-2">
 								<User className="w-4 h-4" />
@@ -58,7 +85,11 @@ const WalletButton = () => {
 						</DropdownMenuItem>
 					))}
 					<DropdownMenuSeparator />
-					<DropdownMenuItem onClick={() => disconnect()}>
+					<DropdownMenuItem
+						onClick={() => {
+							disconnect()
+							toast.success('Wallet disconnected')
+						}}>
 						<LogOut className="w-4 h-4 mr-2" />
 						Disconnect
 					</DropdownMenuItem>
