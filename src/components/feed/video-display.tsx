@@ -1,8 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useInView } from 'react-intersection-observer'
-import { Button } from '@/components/ui/button'
 import { VideoPlayer } from '@/components/shared/video-player'
-import { Play } from 'lucide-react'
+import { Volume2, VolumeX } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface VideoDisplayProps {
@@ -10,17 +9,18 @@ interface VideoDisplayProps {
 	thumbnailUrl?: string
 	className?: string
 	onPlay?: () => void
+	audioEnabled?: boolean
 }
 
 export function VideoDisplay({
 	videoUrl,
 	thumbnailUrl,
 	className,
-	onPlay
+	onPlay,
+	audioEnabled = false
 }: VideoDisplayProps) {
 	const [isPlaying, setIsPlaying] = useState(false)
-	const [isMuted, setIsMuted] = useState(true)
-	const [hasStarted, setHasStarted] = useState(false)
+	const [isMuted, setIsMuted] = useState(!audioEnabled) // Start muted if audio not enabled
 	const [hasTrackedView, setHasTrackedView] = useState(false)
 
 	// Use intersection observer to detect when video is in view
@@ -29,23 +29,33 @@ export function VideoDisplay({
 	})
 
 	// Handle autoplay when video comes into view
-	if (hasStarted && inView !== isPlaying) {
+	useEffect(() => {
 		setIsPlaying(inView)
-	}
+
+		// Track view only once when video comes into view and starts playing
+		if (inView && !hasTrackedView) {
+			setHasTrackedView(true)
+			onPlay?.()
+		}
+	}, [inView, hasTrackedView, onPlay])
+
+	// Update muted state when audioEnabled changes
+	useEffect(() => {
+		if (audioEnabled) {
+			setIsMuted(false) // Unmute when audio is enabled
+		} else {
+			setIsMuted(true) // Keep muted if audio not enabled
+		}
+	}, [audioEnabled])
 
 	const handleVideoReady = () => {
 		console.log('Video ready')
 	}
 
-	const handleGetStarted = () => {
-		setHasStarted(true)
-		setIsMuted(false)
-		setIsPlaying(true)
-
-		// Track view only once when user starts watching
-		if (!hasTrackedView) {
-			setHasTrackedView(true)
-			onPlay?.()
+	const handleMuteToggle = () => {
+		// Only allow unmuting if audio is enabled
+		if (audioEnabled) {
+			setIsMuted(!isMuted)
 		}
 	}
 
@@ -65,29 +75,29 @@ export function VideoDisplay({
 					onVideoReady={handleVideoReady}
 					loadStrategy="eager"
 				/>
-				{!hasStarted && (
-					<div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
-						<Button
-							onClick={handleGetStarted}
-							size="lg"
-							className="flex items-center gap-2">
-							<Play className="w-4 h-4" />
-							Get Started
-						</Button>
-					</div>
-				)}
 
-				{/* Mute/Unmute Button - only show after started */}
-				{hasStarted && (
-					<button
-						onClick={() => setIsMuted(!isMuted)}
-						className="absolute bottom-4 right-4 z-10 p-2 rounded-full bg-black/50 text-white">
-						{isMuted ? (
-							<span className="sr-only">Unmute</span>
-						) : (
-							<span className="sr-only">Mute</span>
-						)}
-					</button>
+				{/* Mute/Unmute Button */}
+				<button
+					onClick={handleMuteToggle}
+					disabled={!audioEnabled}
+					className={cn(
+						'absolute bottom-4 right-4 z-10 p-2 rounded-full transition-colors',
+						audioEnabled
+							? 'bg-black/50 text-white hover:bg-black/70'
+							: 'bg-black/30 text-white/50 cursor-not-allowed'
+					)}>
+					{isMuted ? (
+						<VolumeX className="w-5 h-5" />
+					) : (
+						<Volume2 className="w-5 h-5" />
+					)}
+				</button>
+
+				{/* Audio disabled indicator */}
+				{!audioEnabled && (
+					<div className="absolute top-4 left-4 z-10 bg-black/50 rounded-lg px-2 py-1 text-white text-xs">
+						Audio disabled
+					</div>
 				)}
 			</div>
 		</div>

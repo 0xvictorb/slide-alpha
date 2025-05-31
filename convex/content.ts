@@ -1,5 +1,6 @@
 import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
+import { paginationOptsValidator } from 'convex/server'
 
 // Media schemas for validation
 const imageSchema = v.object({
@@ -19,6 +20,230 @@ export const getFirstActiveContent = query({
 	handler: async (ctx) => {
 		const content = await ctx.db.query('content').order('desc').first()
 
+		if (!content) return null
+
+		const author = await ctx.db.get(content.authorId)
+
+		return {
+			...content,
+			authorWalletAddress: author?.walletAddress
+		}
+	}
+})
+
+/**
+ * Get paginated content feed for TikTok-like navigation - prioritizes videos over images
+ */
+export const getPaginatedContent = query({
+	args: {
+		paginationOpts: paginationOptsValidator,
+		isActiveOnly: v.optional(v.boolean()),
+		preferVideos: v.optional(v.boolean())
+	},
+	returns: v.object({
+		page: v.array(
+			v.object({
+				_id: v.id('content'),
+				_creationTime: v.number(),
+				contentType: v.union(v.literal('video'), v.literal('images')),
+				video: v.optional(
+					v.object({
+						cloudinaryPublicId: v.string(),
+						cloudinaryUrl: v.string(),
+						thumbnailUrl: v.string(),
+						duration: v.number()
+					})
+				),
+				images: v.optional(
+					v.array(
+						v.object({
+							cloudinaryPublicId: v.string(),
+							cloudinaryUrl: v.string(),
+							order: v.number()
+						})
+					)
+				),
+				authorId: v.id('users'),
+				title: v.string(),
+				description: v.optional(v.string()),
+				hashtags: v.optional(v.array(v.string())),
+				isPremium: v.boolean(),
+				isActive: v.boolean(),
+				viewCount: v.number(),
+				lastViewedAt: v.optional(v.number()),
+				promotedTokenId: v.optional(v.string()),
+				authorWalletAddress: v.optional(v.string()),
+				authorName: v.optional(v.string()),
+				authorAvatarUrl: v.optional(v.string())
+			})
+		),
+		isDone: v.boolean(),
+		continueCursor: v.union(v.string(), v.null())
+	}),
+	handler: async (ctx, args) => {
+		const isActiveOnly = args.isActiveOnly ?? true
+		const preferVideos = args.preferVideos ?? true
+		const numItems = args.paginationOpts.numItems
+
+		if (preferVideos) {
+			// Strategy: Get videos first, then fill with images if needed
+			const createVideoQuery = () => {
+				let query = ctx.db
+					.query('content')
+					.withIndex('by_content_type', (q) => q.eq('contentType', 'video'))
+					.order('desc')
+
+				if (isActiveOnly) {
+					query = query.filter((q) => q.eq(q.field('isActive'), true))
+				}
+				return query
+			}
+
+			const createImageQuery = () => {
+				let query = ctx.db
+					.query('content')
+					.withIndex('by_content_type', (q) => q.eq('contentType', 'images'))
+					.order('desc')
+
+				if (isActiveOnly) {
+					query = query.filter((q) => q.eq(q.field('isActive'), true))
+				}
+				return query
+			}
+
+			// Get videos first (aim for 70% videos, 30% images)
+			const videoTargetCount = Math.ceil(numItems * 0.7)
+			const imageTargetCount = numItems - videoTargetCount
+
+			const videos = await createVideoQuery().take(videoTargetCount)
+			const images = await createImageQuery().take(imageTargetCount)
+
+			// If we don't have enough videos, get more images
+			let finalVideos = videos
+			let finalImages = images
+
+			if (videos.length < videoTargetCount) {
+				const additionalImagesNeeded = videoTargetCount - videos.length
+				const additionalImages = await createImageQuery().take(
+					imageTargetCount + additionalImagesNeeded
+				)
+				finalImages = additionalImages
+			}
+
+			// If we don't have enough images, get more videos
+			if (images.length < imageTargetCount) {
+				const additionalVideosNeeded = imageTargetCount - images.length
+				const additionalVideos = await createVideoQuery().take(
+					videoTargetCount + additionalVideosNeeded
+				)
+				finalVideos = additionalVideos
+			}
+
+			// Combine and sort by creation time within each type
+			const combinedContent = [
+				...finalVideos.sort((a, b) => b._creationTime - a._creationTime),
+				...finalImages.sort((a, b) => b._creationTime - a._creationTime)
+			]
+
+			// Take only what we need
+			const page = combinedContent.slice(0, numItems)
+
+			// Enrich content with author wallet addresses
+			const enrichedContent = await Promise.all(
+				page.map(async (content) => {
+					const author = await ctx.db.get(content.authorId)
+					return {
+						...content,
+						authorWalletAddress: author?.walletAddress,
+						authorName: author?.name,
+						authorAvatarUrl: author?.avatarUrl
+					}
+				})
+			)
+
+			return {
+				page: enrichedContent,
+				isDone: combinedContent.length < numItems,
+				continueCursor:
+					combinedContent.length < numItems ? null : 'video-prioritized'
+			}
+		} else {
+			// Original behavior for non-video-preferred queries
+			let contentQuery = ctx.db.query('content').order('desc')
+
+			// Filter by active content if requested
+			if (isActiveOnly) {
+				contentQuery = contentQuery.filter((q) =>
+					q.eq(q.field('isActive'), true)
+				)
+			}
+
+			const result = await contentQuery.paginate(args.paginationOpts)
+
+			// Enrich content with author wallet addresses
+			const enrichedContent = await Promise.all(
+				result.page.map(async (content) => {
+					const author = await ctx.db.get(content.authorId)
+					return {
+						...content,
+						authorWalletAddress: author?.walletAddress,
+						authorName: author?.name,
+						authorAvatarUrl: author?.avatarUrl
+					}
+				})
+			)
+
+			return {
+				page: enrichedContent,
+				isDone: result.isDone,
+				continueCursor: result.continueCursor
+			}
+		}
+	}
+})
+
+/**
+ * Get content by ID for navigation
+ */
+export const getContentById = query({
+	args: { contentId: v.id('content') },
+	returns: v.union(
+		v.object({
+			_id: v.id('content'),
+			_creationTime: v.number(),
+			contentType: v.union(v.literal('video'), v.literal('images')),
+			video: v.optional(
+				v.object({
+					cloudinaryPublicId: v.string(),
+					cloudinaryUrl: v.string(),
+					thumbnailUrl: v.string(),
+					duration: v.number()
+				})
+			),
+			images: v.optional(
+				v.array(
+					v.object({
+						cloudinaryPublicId: v.string(),
+						cloudinaryUrl: v.string(),
+						order: v.number()
+					})
+				)
+			),
+			authorId: v.id('users'),
+			title: v.string(),
+			description: v.optional(v.string()),
+			hashtags: v.optional(v.array(v.string())),
+			isPremium: v.boolean(),
+			isActive: v.boolean(),
+			viewCount: v.number(),
+			lastViewedAt: v.optional(v.number()),
+			promotedTokenId: v.optional(v.string()),
+			authorWalletAddress: v.optional(v.string())
+		}),
+		v.null()
+	),
+	handler: async (ctx, args) => {
+		const content = await ctx.db.get(args.contentId)
 		if (!content) return null
 
 		const author = await ctx.db.get(content.authorId)

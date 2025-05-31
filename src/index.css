@@ -126,3 +126,15 @@ html {
 	margin-inline: auto;
 	padding-inline: 2rem;
 }
+
+/* Custom animations for splash screen */
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}

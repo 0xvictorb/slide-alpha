@@ -177,3 +177,147 @@ export const getUserContent = query({
 		return content
 	}
 })
+
+/**
+ * Follow/unfollow a user
+ */
+export const toggleFollow = mutation({
+	args: {
+		followerWalletAddress: v.string(), // Current user who wants to follow
+		followingWalletAddress: v.string() // User to be followed
+	},
+	returns: v.boolean(), // Returns true if now following, false if unfollowed
+	handler: async (ctx, args) => {
+		// Get both users
+		const follower = await ctx.db
+			.query('users')
+			.withIndex('by_wallet', (q) =>
+				q.eq('walletAddress', args.followerWalletAddress)
+			)
+			.unique()
+
+		const following = await ctx.db
+			.query('users')
+			.withIndex('by_wallet', (q) =>
+				q.eq('walletAddress', args.followingWalletAddress)
+			)
+			.unique()
+
+		if (!follower) throw new Error('Follower user not found')
+		if (!following) throw new Error('Following user not found')
+
+		// Can't follow yourself
+		if (follower._id === following._id) {
+			throw new Error('Cannot follow yourself')
+		}
+
+		// Check if already following
+		const existingFollow = await ctx.db
+			.query('social')
+			.withIndex('by_both', (q) =>
+				q.eq('followerId', follower._id).eq('followingId', following._id)
+			)
+			.unique()
+
+		if (existingFollow) {
+			// Unfollow
+			await ctx.db.delete(existingFollow._id)
+
+			// Update counters
+			await ctx.db.patch(follower._id, {
+				followingCount: Math.max(0, follower.followingCount - 1)
+			})
+			await ctx.db.patch(following._id, {
+				followerCount: Math.max(0, following.followerCount - 1)
+			})
+
+			return false
+		} else {
+			// Follow
+			await ctx.db.insert('social', {
+				followerId: follower._id,
+				followingId: following._id,
+				createdAt: Date.now()
+			})
+
+			// Update counters
+			await ctx.db.patch(follower._id, {
+				followingCount: follower.followingCount + 1
+			})
+			await ctx.db.patch(following._id, {
+				followerCount: following.followerCount + 1
+			})
+
+			return true
+		}
+	}
+})
+
+/**
+ * Check if a user is following another user
+ */
+export const isFollowing = query({
+	args: {
+		followerWalletAddress: v.string(),
+		followingWalletAddress: v.string()
+	},
+	returns: v.boolean(),
+	handler: async (ctx, args) => {
+		// Get both users
+		const follower = await ctx.db
+			.query('users')
+			.withIndex('by_wallet', (q) =>
+				q.eq('walletAddress', args.followerWalletAddress)
+			)
+			.unique()
+
+		const following = await ctx.db
+			.query('users')
+			.withIndex('by_wallet', (q) =>
+				q.eq('walletAddress', args.followingWalletAddress)
+			)
+			.unique()
+
+		if (!follower || !following) return false
+
+		const existingFollow = await ctx.db
+			.query('social')
+			.withIndex('by_both', (q) =>
+				q.eq('followerId', follower._id).eq('followingId', following._id)
+			)
+			.unique()
+
+		return !!existingFollow
+	}
+})
+
+/**
+ * Get user by wallet address (for profile display)
+ */
+export const getUserByWallet = query({
+	args: {
+		walletAddress: v.string()
+	},
+	returns: v.union(
+		v.object({
+			_id: v.id('users'),
+			_creationTime: v.number(),
+			walletAddress: v.string(),
+			name: v.string(),
+			bio: v.optional(v.string()),
+			avatarUrl: v.optional(v.string()),
+			followerCount: v.number(),
+			followingCount: v.number(),
+			isCreator: v.boolean()
+		}),
+		v.null()
+	),
+	handler: async (ctx, args) => {
+		const user = await ctx.db
+			.query('users')
+			.withIndex('by_wallet', (q) => q.eq('walletAddress', args.walletAddress))
+			.unique()
+
+		return user
+	}
+})

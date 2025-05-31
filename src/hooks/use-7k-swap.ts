@@ -77,6 +77,7 @@ export const useGet7kExpectedAmount = ({
 		queryKey: ['useGet7kExpectedAmount', tokenIn, tokenOut, amountIn],
 		staleTime: 5 * 1000,
 		refetchInterval: 6 * 1000,
+		enabled: !!Number(amountIn) && !!tokenIn && !!tokenOut,
 		queryFn: async () => {
 			if (!client || !account) {
 				throw new SuiTransactionError('No account connected')
