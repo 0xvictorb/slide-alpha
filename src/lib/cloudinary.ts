@@ -1,10 +1,11 @@
 import { api } from '@convex/_generated/api'
-import { useMutation, useAction } from 'convex/react'
-import type { Id } from '@convex/_generated/dataModel'
+import { useAction } from 'convex/react'
 
 interface CloudinaryUploadResult {
 	public_id: string
 	secure_url: string
+	playback_url: string
+	asset_id: string
 	resource_type: 'image' | 'video'
 	duration?: number // For videos only
 }
@@ -64,6 +65,8 @@ export async function uploadToCloudinary(
 	return {
 		public_id: data.public_id,
 		secure_url: data.secure_url,
+		playback_url: data.playback_url,
+		asset_id: data.asset_id,
 		resource_type: data.resource_type,
 		duration: data.duration
 	}
@@ -71,7 +74,6 @@ export async function uploadToCloudinary(
 
 // React hook for handling file uploads
 export function useCloudinaryUpload() {
-	const saveContent = useMutation(api.content.saveContent)
 	const generateSignatureAction = useAction(
 		api.cloudinary.generateUploadSignature
 	)
@@ -89,22 +91,7 @@ export function useCloudinaryUpload() {
 		}
 	}
 
-	const upload = async (
-		file: File,
-		{
-			title,
-			description,
-			authorId,
-			isPremium = false,
-			isActive = true
-		}: {
-			title: string
-			description?: string
-			authorId: Id<'users'>
-			isPremium?: boolean
-			isActive?: boolean
-		}
-	) => {
+	const upload = async (file: File) => {
 		try {
 			// Upload the main file
 			const result = await uploadToCloudinary(file, {
@@ -113,43 +100,18 @@ export function useCloudinaryUpload() {
 			})
 
 			// For videos, generate a thumbnail using Cloudinary's transformation URL
-			let thumbnail:
-				| Pick<
-						CloudinaryUploadResult,
-						'public_id' | 'secure_url' | 'resource_type'
-				  >
-				| undefined
+			let thumbnailUrl: string | undefined
 			if (result.resource_type === 'video') {
-				const thumbnailPublicId = result.public_id.replace(
-					'/content/',
-					'/thumbnails/'
-				)
-				thumbnail = {
-					public_id: thumbnailPublicId,
-					secure_url: result.secure_url.replace(
-						'/upload/',
-						'/upload/c_thumb,w_640,h_640/'
-					),
-					resource_type: 'image'
-				}
+				thumbnailUrl = `https://res-console.cloudinary.com/flask-image/media_explorer_thumbnails/${result.asset_id}/card`
 			}
 
-			// Save to Convex
-			await saveContent({
-				cloudinaryPublicId: result.public_id,
-				cloudinaryUrl: result.secure_url,
-				cloudinaryResourceType: result.resource_type,
-				thumbnailPublicId: thumbnail?.public_id,
-				thumbnailUrl: thumbnail?.secure_url,
-				authorId,
-				title,
-				description,
+			return {
+				public_id: result.public_id,
+				secure_url: result.playback_url,
+				resource_type: result.resource_type,
 				duration: result.duration,
-				isPremium,
-				isActive
-			})
-
-			return result
+				thumbnail: thumbnailUrl
+			}
 		} catch (error) {
 			console.error('Upload failed:', error)
 			throw error

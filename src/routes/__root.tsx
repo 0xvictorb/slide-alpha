@@ -8,9 +8,9 @@ import { createRootRoute, Outlet } from '@tanstack/react-router'
 import { Toaster } from '@/components/ui/sonner'
 import NiceModal from '@ebay/nice-modal-react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Layout } from '@/components/shared/layout'
 import useCurrentAccountAddress from '@/hooks/use-current-account-address'
 import useWalletAccountList from '@/hooks/use-wallet-account-list'
+import { RootLayout } from '@/components/layout/root-layout'
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -46,9 +46,9 @@ export const Route = createRootRoute({
 						name: 'Sui Starter Kit'
 					}}>
 					<NiceModal.Provider>
-						<Layout>
+						<RootLayout>
 							<Outlet />
-						</Layout>
+						</RootLayout>
 						<GlobalHooks />
 						<Toaster richColors />
 					</NiceModal.Provider>

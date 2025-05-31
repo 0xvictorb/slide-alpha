@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { VideoDisplay } from './video-display'
 import { ImageCarousel } from './image-carousel'
 import { EngagementActions } from './engagement-actions'
+import { TokenInfo } from './token-info'
 
 interface VideoFeedProps {
 	className?: string
@@ -20,6 +21,7 @@ interface ContentMedia {
 		url: string
 		alt?: string
 	}>
+	promotedTokenId?: string
 }
 
 export function VideoFeed({ className }: VideoFeedProps) {
@@ -39,28 +41,27 @@ export function VideoFeed({ className }: VideoFeedProps) {
 	// When we get the content data, set it as current
 	useEffect(() => {
 		if (firstContent) {
-			if (firstContent.cloudinaryResourceType === 'image') {
+			if (firstContent.images) {
 				// If it's an image post, we might have multiple images
 				setCurrentContent({
 					id: firstContent._id,
-					mediaUrl: firstContent.cloudinaryUrl,
-					thumbnailUrl: firstContent.thumbnailUrl,
-					resourceType: firstContent.cloudinaryResourceType,
-					images: [
-						{
-							url: firstContent.cloudinaryUrl,
-							alt: firstContent.title
-						}
-						// Add more images here when the API supports multiple images
-					]
+					mediaUrl: firstContent.images?.[0]?.cloudinaryUrl || '',
+					thumbnailUrl: firstContent.images?.[0]?.cloudinaryUrl || '',
+					resourceType: 'image',
+					images: firstContent.images.map((image) => ({
+						url: image.cloudinaryUrl,
+						alt: image.cloudinaryPublicId
+					})),
+					promotedTokenId: firstContent.promotedTokenId
 				})
 			} else {
 				// Video post
 				setCurrentContent({
 					id: firstContent._id,
-					mediaUrl: firstContent.cloudinaryUrl,
-					thumbnailUrl: firstContent.thumbnailUrl,
-					resourceType: firstContent.cloudinaryResourceType
+					mediaUrl: firstContent.video?.cloudinaryUrl || '',
+					thumbnailUrl: firstContent.video?.thumbnailUrl || '',
+					resourceType: 'video',
+					promotedTokenId: firstContent.promotedTokenId
 				})
 			}
 		}
@@ -110,6 +111,14 @@ export function VideoFeed({ className }: VideoFeedProps) {
 					/>
 				)}
 			</div>
+
+			{/* Token information */}
+			{currentContent.promotedTokenId && (
+				<TokenInfo
+					tokenId={currentContent.promotedTokenId}
+					className="absolute top-4 left-4 z-10"
+				/>
+			)}
 
 			{/* Engagement actions */}
 			<div className="absolute bottom-4 right-4 z-10">

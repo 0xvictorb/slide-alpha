@@ -1,27 +1,18 @@
 import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
 
-export const saveContent = mutation({
-	args: {
-		cloudinaryPublicId: v.string(),
-		cloudinaryUrl: v.string(),
-		cloudinaryResourceType: v.union(v.literal('video'), v.literal('image')),
-		thumbnailPublicId: v.optional(v.string()),
-		thumbnailUrl: v.optional(v.string()),
-		authorId: v.id('users'),
-		title: v.string(),
-		description: v.optional(v.string()),
-		duration: v.optional(v.number()),
-		isPremium: v.boolean(),
-		isActive: v.boolean()
-	},
-	handler: async (ctx, args) => {
-		await ctx.db.insert('content', {
-			...args,
-			viewCount: 0,
-			lastViewedAt: undefined
-		})
-	}
+// Media schemas for validation
+const imageSchema = v.object({
+	cloudinaryPublicId: v.string(),
+	cloudinaryUrl: v.string(),
+	order: v.number()
+})
+
+const videoSchema = v.object({
+	cloudinaryPublicId: v.string(),
+	cloudinaryUrl: v.string(),
+	thumbnailUrl: v.string(),
+	duration: v.number()
 })
 
 export const getFirstActiveContent = query({
@@ -201,9 +192,84 @@ export const getTrendingContent = query({
 			.order('desc')
 			.take(limit)
 
-		return trendingContent.map((content) => ({
-			...content,
-			streamingUrl: content.cloudinaryUrl
-		}))
+		return trendingContent
+	}
+})
+
+export const createContent = mutation({
+	args: {
+		// Media info
+		contentType: v.union(v.literal('video'), v.literal('images')),
+		video: v.optional(videoSchema),
+		images: v.optional(v.array(imageSchema)),
+
+		// Content info
+		title: v.string(),
+		description: v.optional(v.string()),
+		hashtags: v.array(v.string()),
+
+		// Status
+		isPremium: v.boolean(),
+
+		// Token promotion
+		isPromotingToken: v.boolean(),
+		promotedTokenId: v.optional(v.string()),
+
+		// Author
+		authorWalletAddress: v.string()
+	},
+	handler: async (ctx, args) => {
+		// Get user by wallet address
+		const user = await ctx.db
+			.query('users')
+			.withIndex('by_wallet', (q) =>
+				q.eq('walletAddress', args.authorWalletAddress)
+			)
+			.unique()
+
+		if (!user) throw new Error('User not found')
+
+		// Check if user has enough followers for premium content
+		if (args.isPremium && user.followerCount < 100) {
+			throw new Error('Need at least 100 followers to create premium content')
+		}
+
+		// Validate media content
+		if (args.contentType === 'video' && !args.video) {
+			throw new Error('Video content is required when contentType is video')
+		}
+		if (
+			args.contentType === 'images' &&
+			(!args.images || args.images.length === 0)
+		) {
+			throw new Error(
+				'At least one image is required when contentType is images'
+			)
+		}
+
+		// Create the content
+		const contentId = await ctx.db.insert('content', {
+			// Media info
+			contentType: args.contentType,
+			video: args.video,
+			images: args.images,
+
+			// Content info
+			authorId: user._id,
+			title: args.title,
+			description: args.description,
+			hashtags: args.hashtags,
+
+			// Status and metrics
+			isPremium: args.isPremium,
+			isActive: true,
+			viewCount: 0,
+			lastViewedAt: undefined,
+
+			// Token promotion
+			promotedTokenId: args.isPromotingToken ? args.promotedTokenId : undefined
+		})
+
+		return { contentId }
 	}
 })

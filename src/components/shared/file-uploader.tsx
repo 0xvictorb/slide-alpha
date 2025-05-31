@@ -1,4 +1,4 @@
-import { type ChangeEvent, useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { useCurrentAccount } from '@mysten/dapp-kit'
@@ -7,26 +7,24 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Upload, X, Play } from 'lucide-react'
-import type { DragEndEvent } from '@dnd-kit/core'
-import {
-	DndContext,
-	useSensor,
-	useSensors,
-	DragOverlay,
-	MouseSensor,
-	TouchSensor,
-	KeyboardSensor,
-	type UniqueIdentifier
-} from '@dnd-kit/core'
-import { restrictToWindowEdges } from '@dnd-kit/modifiers'
+import { useDropzone } from 'react-dropzone'
 import { useCloudinaryUpload } from '@/lib/cloudinary'
+
+interface CloudinaryUploadResult {
+	publicId: string
+	url: string
+	thumbnail?: string
+	duration?: number
+}
 
 interface FileUploaderProps {
 	className?: string
 	accept?: string
 	maxSize?: number // in MB
-	onUploadComplete?: (publicId: string) => void
-	isPremium?: boolean
+	onUploadComplete?: (
+		result: CloudinaryUploadResult | CloudinaryUploadResult[]
+	) => void
+	multiple?: boolean
 }
 
 interface FilePreviewProps {
@@ -77,62 +75,78 @@ function FilePreview({ file, className }: FilePreviewProps) {
 	)
 }
 
-interface DraggableFileProps {
+interface FileItemProps {
 	file: File
 	onRemove: () => void
 	isUploading: boolean
 	uploadProgress: number
-	onUpload: () => void
+	status: 'idle' | 'uploading' | 'completed' | 'error'
+	errorMessage?: string
+	onReplace: () => void
 }
 
-function DraggableFile({
+function FileItem({
 	file,
 	onRemove,
+	onReplace,
 	isUploading,
 	uploadProgress,
-	onUpload
-}: DraggableFileProps) {
+	status,
+	errorMessage
+}: FileItemProps) {
 	return (
 		<div className="w-full space-y-4 p-4 bg-white rounded-lg shadow-sm border">
 			<FilePreview file={file} className="w-full aspect-video" />
 
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<Upload className="w-5 h-5 text-gray-400" />
-					<span className="text-sm truncate max-w-[200px]">{file.name}</span>
+					{status === 'completed' ? (
+						<div className="flex items-center gap-2 text-green-600">
+							<Upload className="w-5 h-5" />
+							<span className="text-sm">Upload complete</span>
+						</div>
+					) : status === 'error' ? (
+						<div className="flex items-center gap-2 text-red-600">
+							<X className="w-5 h-5" />
+							<span className="text-sm">{errorMessage || 'Upload failed'}</span>
+						</div>
+					) : (
+						<>
+							<Upload className="w-5 h-5 text-gray-400" />
+							<span className="text-sm truncate max-w-[200px]">
+								{file.name}
+							</span>
+						</>
+					)}
 				</div>
-				<Button
-					variant="ghost"
-					size="icon"
-					onClick={onRemove}
-					disabled={isUploading}>
-					<X className="w-4 h-4" />
-				</Button>
+				<div className="flex items-center gap-2">
+					{status === 'completed' && (
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={onReplace}
+							disabled={isUploading}>
+							Replace
+						</Button>
+					)}
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={onRemove}
+						disabled={isUploading}>
+						<X className="w-4 h-4" />
+					</Button>
+				</div>
 			</div>
 
-			{isUploading ? (
+			{isUploading && (
 				<div className="space-y-2">
 					<Progress value={uploadProgress} />
 					<p className="text-xs text-center text-gray-500">
 						Uploading... {uploadProgress}%
 					</p>
 				</div>
-			) : (
-				<Button className="w-full" onClick={onUpload}>
-					Upload file
-				</Button>
 			)}
-		</div>
-	)
-}
-
-function DropOverlay() {
-	return (
-		<div className="absolute inset-0 bg-primary/5 border-2 border-primary border-dashed rounded-lg flex items-center justify-center">
-			<div className="text-center">
-				<Upload className="w-10 h-10 text-primary mx-auto mb-2" />
-				<p className="text-sm text-primary font-medium">Drop to upload</p>
-			</div>
 		</div>
 	)
 }
@@ -140,9 +154,9 @@ function DropOverlay() {
 export function FileUploader({
 	className,
 	accept = 'image/*,video/*',
-	maxSize = 50, // Default 50MB
+	maxSize = 50,
 	onUploadComplete,
-	isPremium = false
+	multiple = false
 }: FileUploaderProps) {
 	const currentAccount = useCurrentAccount()
 	const upload = useCloudinaryUpload()
@@ -150,164 +164,260 @@ export function FileUploader({
 		walletAddress: currentAccount?.address ?? ''
 	})
 
-	const [selectedFile, setSelectedFile] = useState<File | null>(null)
-	const [isUploading, setIsUploading] = useState(false)
-	const [uploadProgress, setUploadProgress] = useState(0)
-	const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null)
-	const fileInputRef = useRef<HTMLInputElement>(null)
-
-	// Configure DND Kit sensors
-	const sensors = useSensors(
-		useSensor(MouseSensor, {
-			activationConstraint: {
-				distance: 5
+	const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+	const [uploadStatuses, setUploadStatuses] = useState<
+		Map<
+			string,
+			{
+				progress: number
+				status: 'idle' | 'uploading' | 'completed' | 'error'
+				error?: string
+				result?: CloudinaryUploadResult
 			}
-		}),
-		useSensor(TouchSensor, {
-			activationConstraint: {
-				delay: 100,
-				tolerance: 5
-			}
-		}),
-		useSensor(KeyboardSensor)
-	)
+		>
+	>(new Map())
+	const progressIntervalsRef = useRef<Map<string, number>>(new Map())
+	const abortControllersRef = useRef<Map<string, AbortController>>(new Map())
 
-	const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
-		const file = event.target.files?.[0]
-		validateAndSetFile(file)
-	}
+	const cancelUpload = useCallback((fileId: string) => {
+		const intervalId = progressIntervalsRef.current.get(fileId)
+		if (intervalId !== undefined) {
+			window.clearInterval(intervalId)
+			progressIntervalsRef.current.delete(fileId)
+		}
+		const controller = abortControllersRef.current.get(fileId)
+		if (controller) {
+			controller.abort()
+			abortControllersRef.current.delete(fileId)
+		}
+		setUploadStatuses((prev) => {
+			const newStatuses = new Map(prev)
+			newStatuses.delete(fileId)
+			return newStatuses
+		})
+	}, [])
 
-	const validateAndSetFile = (file: File | null | undefined) => {
-		if (!file) return
-
-		// Validate file size
-		if (file.size > maxSize * 1024 * 1024) {
-			toast.error(`File size must be less than ${maxSize}MB`)
+	const handleUpload = async (file: File) => {
+		if (!currentUser?._id) {
+			setUploadStatuses((prev) => {
+				const newStatuses = new Map(prev)
+				newStatuses.set(file.name, {
+					progress: 0,
+					status: 'error',
+					error: 'User not authenticated'
+				})
+				return newStatuses
+			})
 			return
 		}
 
-		// Validate file type
-		const fileType = file.type.split('/')[0]
-		if (!accept.includes(fileType)) {
-			toast.error(`Only ${accept} files are allowed`)
-			return
-		}
-
-		setSelectedFile(file)
-	}
-
-	const handleDragEnd = (event: DragEndEvent) => {
-		const { over } = event
-		setActiveId(null)
-
-		// If dropped in the upload zone
-		if (over && over.id === 'upload-zone') {
-			handleUpload()
-		}
-	}
-
-	const handleUpload = async () => {
-		if (!selectedFile || !currentUser?._id) return
+		const controller = new AbortController()
+		abortControllersRef.current.set(file.name, controller)
 
 		try {
-			setIsUploading(true)
-			setUploadProgress(0)
-
-			// Create a fake progress simulation since we can't track Cloudinary upload progress directly
-			const progressInterval = setInterval(() => {
-				setUploadProgress((prev) => {
-					if (prev >= 90) return prev // Stop at 90% until upload completes
-					return prev + 10
+			setUploadStatuses((prev) => {
+				const newStatuses = new Map(prev)
+				newStatuses.set(file.name, {
+					progress: 0,
+					status: 'uploading'
 				})
-			}, 500)
-
-			// Upload to Cloudinary and save to Convex
-			const result = await upload(selectedFile, {
-				title: selectedFile.name,
-				authorId: currentUser._id,
-				isPremium,
-				isActive: true
+				return newStatuses
 			})
 
-			clearInterval(progressInterval)
-			setUploadProgress(100)
+			// Create progress simulation
+			const intervalId = window.setInterval(() => {
+				setUploadStatuses((prev) => {
+					const newStatuses = new Map(prev)
+					const currentStatus = newStatuses.get(file.name)
+					if (currentStatus && currentStatus.status === 'uploading') {
+						newStatuses.set(file.name, {
+							...currentStatus,
+							progress: Math.min(currentStatus.progress + 10, 90)
+						})
+					}
+					return newStatuses
+				})
+			}, 500)
+			progressIntervalsRef.current.set(file.name, intervalId)
 
-			onUploadComplete?.(result.public_id)
-			toast.success('File uploaded successfully')
-		} catch (error) {
-			toast.error('Upload failed. Please try again.')
-			console.error('Upload error:', error)
-		} finally {
-			setIsUploading(false)
-			setUploadProgress(0)
-			setSelectedFile(null)
-			if (fileInputRef.current) {
-				fileInputRef.current.value = ''
+			const result = await upload(file)
+
+			// Clear the progress interval
+			window.clearInterval(intervalId)
+			progressIntervalsRef.current.delete(file.name)
+
+			// Transform and store the result
+			const transformedResult: CloudinaryUploadResult = {
+				publicId: result.public_id,
+				url: result.secure_url,
+				...(result.resource_type === 'video' &&
+					result.thumbnail && {
+						thumbnail: result.thumbnail,
+						duration: result.duration
+					})
+			}
+
+			setUploadStatuses((prev) => {
+				const newStatuses = new Map(prev)
+				newStatuses.set(file.name, {
+					progress: 100,
+					status: 'completed',
+					result: transformedResult
+				})
+
+				// Check if all files are completed within the state update
+				const allCompleted = Array.from(newStatuses.values()).every(
+					(status) => status.status === 'completed'
+				)
+
+				if (allCompleted) {
+					// Get all completed results
+					const results = Array.from(newStatuses.values())
+						.map((status) => status.result)
+						.filter((result): result is CloudinaryUploadResult => !!result)
+
+					// Check if we have any videos (we don't support mixed content types)
+					const hasVideos = results.some((r) => r.thumbnail !== undefined)
+					if (hasVideos && results.length > 1) {
+						throw new Error('Multiple video uploads are not supported')
+					}
+
+					if (onUploadComplete) {
+						onUploadComplete(multiple ? results : results[0])
+					}
+					toast.success('All files uploaded successfully')
+				}
+
+				return newStatuses
+			})
+		} catch (error: unknown) {
+			console.error('Upload failed:', error)
+			setUploadStatuses((prev) => {
+				const newStatuses = new Map(prev)
+				newStatuses.set(file.name, {
+					progress: 0,
+					status: 'error',
+					error: error instanceof Error ? error.message : 'Upload failed'
+				})
+				return newStatuses
+			})
+			window.clearInterval(progressIntervalsRef.current.get(file.name))
+			progressIntervalsRef.current.delete(file.name)
+		}
+	}
+
+	const handleClearFile = (index: number) => {
+		const file = selectedFiles[index]
+		if (file) {
+			cancelUpload(file.name)
+		}
+		setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
+	}
+
+	// Parse accept string into object for react-dropzone
+	const acceptedTypes = accept.split(',').reduce(
+		(acc, type) => {
+			acc[type.trim()] = []
+			return acc
+		},
+		{} as Record<string, string[]>
+	)
+
+	const { getRootProps, getInputProps, isDragActive } = useDropzone({
+		accept: acceptedTypes,
+		maxSize: maxSize * 1024 * 1024,
+		multiple,
+		disabled: false,
+		onDropAccepted: (files) => {
+			if (multiple) {
+				setSelectedFiles((prev) => [...prev, ...files])
+				files.forEach(handleUpload)
+			} else {
+				setSelectedFiles([files[0]])
+				handleUpload(files[0])
+			}
+		},
+		onDropRejected: (rejections) => {
+			const [rejection] = rejections
+			if (rejection.errors[0].code === 'file-too-large') {
+				toast.error(`File size must be less than ${maxSize}MB`)
+			} else if (rejection.errors[0].code === 'file-invalid-type') {
+				toast.error(`Only ${accept} files are allowed`)
+			} else {
+				toast.error('Invalid file')
 			}
 		}
-	}
+	})
 
-	const handleClearFile = () => {
-		setSelectedFile(null)
-		if (fileInputRef.current) {
-			fileInputRef.current.value = ''
+	// Cleanup on unmount
+	useEffect(() => {
+		return () => {
+			selectedFiles.forEach((file) => cancelUpload(file.name))
 		}
-	}
+	}, [cancelUpload, selectedFiles])
 
 	return (
-		<DndContext
-			sensors={sensors}
-			onDragEnd={handleDragEnd}
-			modifiers={[restrictToWindowEdges]}>
+		<div className={cn('w-full', className)}>
 			<div
+				{...getRootProps()}
 				className={cn(
-					'relative flex flex-col items-center justify-center w-full min-h-[200px] transition-colors',
-					className
+					'w-full min-h-[200px] p-4 border-2 border-dashed rounded-lg transition-colors',
+					isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300',
+					selectedFiles.length > 0
+						? 'cursor-default'
+						: 'cursor-pointer hover:border-primary/50'
 				)}>
-				<div
-					id="upload-zone"
-					className={cn(
-						'w-full min-h-[200px] p-4 border-2 border-dashed rounded-lg',
-						activeId ? 'border-primary bg-primary/5' : 'border-gray-300'
-					)}>
-					<input
-						type="file"
-						accept={accept}
-						ref={fileInputRef}
-						onChange={handleFileSelect}
-						className="hidden"
-						disabled={isUploading}
-					/>
+				<input {...getInputProps()} />
 
-					{!selectedFile ? (
-						<div className="flex flex-col items-center gap-2 text-center h-full justify-center">
-							<Upload className="w-10 h-10 text-gray-400" />
-							<div className="flex flex-col gap-1">
-								<Button
-									variant="ghost"
-									onClick={() => fileInputRef.current?.click()}
-									disabled={isUploading}>
-									Choose a file
-								</Button>
-								<p className="text-sm text-gray-500">or drag and drop</p>
-							</div>
-							<p className="text-xs text-gray-400">
-								{accept.split(',').join(', ')} (max {maxSize}MB)
-							</p>
+				{selectedFiles.length === 0 ? (
+					<div className="flex flex-col items-center gap-2 text-center h-full justify-center">
+						<Upload className="w-10 h-10 text-gray-400" />
+						<div className="flex flex-col gap-1">
+							<Button variant="ghost" disabled={false}>
+								Choose {multiple ? 'files' : 'a file'}
+							</Button>
+							<p className="text-sm text-gray-500">or drag and drop</p>
 						</div>
-					) : (
-						<DraggableFile
-							file={selectedFile}
-							onRemove={handleClearFile}
-							isUploading={isUploading}
-							uploadProgress={uploadProgress}
-							onUpload={handleUpload}
-						/>
-					)}
-				</div>
-
-				<DragOverlay>{activeId ? <DropOverlay /> : null}</DragOverlay>
+						<p className="text-xs text-gray-400">
+							{accept} (max {maxSize}MB)
+						</p>
+					</div>
+				) : (
+					<div className="space-y-4">
+						{selectedFiles.map((file, index) => {
+							const status = uploadStatuses.get(file.name)
+							return (
+								<FileItem
+									key={index}
+									file={file}
+									onRemove={() => handleClearFile(index)}
+									onReplace={() => {
+										const input = document.createElement('input')
+										input.type = 'file'
+										input.accept = accept
+										input.click()
+										input.onchange = (e) => {
+											const newFile = (e.target as HTMLInputElement).files?.[0]
+											if (newFile) {
+												setSelectedFiles((prev) => {
+													const newFiles = [...prev]
+													newFiles[index] = newFile
+													return newFiles
+												})
+												handleUpload(newFile)
+											}
+										}
+									}}
+									isUploading={status?.status === 'uploading'}
+									uploadProgress={status?.progress ?? 0}
+									status={status?.status ?? 'idle'}
+									errorMessage={status?.error}
+								/>
+							)
+						})}
+					</div>
+				)}
 			</div>
-		</DndContext>
+		</div>
 	)
 }

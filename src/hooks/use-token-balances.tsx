@@ -4,17 +4,18 @@ import { useQueries, useQuery } from '@tanstack/react-query'
 import { fromDecimals } from '@/lib/number'
 import { useTokensFiatPrice } from './use-tokens-fiat-price'
 import { getCoinMetadata } from '@/lib/sui'
+import { SUI_TYPE_ARG } from '@mysten/sui/utils'
 
 export interface TokenBalance {
 	symbol: string
 	balance: string
 	coinType: string
+	formattedBalance: string
 	name?: string
 	decimals?: number
-	iconUrl?: string
+	iconUrl?: string | null
 	usdPrice?: number
 	usdValue?: number
-	formattedBalance?: string
 }
 
 async function getAllTokenBalances(
@@ -34,7 +35,8 @@ async function getAllTokenBalances(
 	return Array.from(balanceMap.entries()).map(([coinType, balance]) => ({
 		symbol: coinType.split('::').pop() || coinType,
 		balance: balance.toString(),
-		coinType
+		coinType,
+		formattedBalance: '0' // Will be updated with metadata
 	}))
 }
 
@@ -64,14 +66,16 @@ export function useTokenBalances() {
 
 	const balancesWithMetadata = balancesQuery.data?.map((balance, index) => {
 		const metadata = metadataQueries[index]?.data
-		const formattedBalance = fromDecimals(balance.balance, metadata?.decimals)
+		const formattedBalance =
+			fromDecimals(balance.balance, metadata?.decimals) || '0'
 		const usdPrice = tokenPrices?.[balance.symbol]?.price
 		const usdValue = usdPrice ? Number(formattedBalance) * usdPrice : undefined
 
 		return {
 			...balance,
 			formattedBalance,
-			iconUrl: metadata?.iconUrl,
+			iconUrl:
+				balance.coinType === SUI_TYPE_ARG ? '/sui.jpeg' : metadata?.iconUrl,
 			name: metadata?.name,
 			decimals: metadata?.decimals,
 			usdPrice,
