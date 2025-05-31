@@ -33,6 +33,7 @@ Focus on what is high priority, needed to implement in 48 hours.
 - Creator Dashboard
 - Token Integration UI
 - Wallet Connection Interface
+
 #### Smart Contract Integration
 - SUI Wallet Connection
 - Token Price Feeds
@@ -54,6 +55,7 @@ Phase 1 (Day 1, First 24 Hours)
    + Content upload interface
    + Basic creator dashboard
    + Content management
+
 ### Phase 2 (Day 2, Next 24 Hours)
 #### Medium Priority Features:
 1. Token Integration (8 hours)

@@ -276,3 +276,160 @@ export const createContent = mutation({
 		return { contentId }
 	}
 })
+
+// Comment functionality
+export const createComment = mutation({
+	args: {
+		contentId: v.id('content'),
+		text: v.string(),
+		walletAddress: v.string()
+	},
+	returns: v.id('comments'),
+	handler: async (ctx, args) => {
+		// Validate input
+		if (!args.text.trim()) {
+			throw new Error('Comment text cannot be empty')
+		}
+
+		if (args.text.length > 1000) {
+			throw new Error('Comment text cannot exceed 1000 characters')
+		}
+
+		// Get user by wallet address
+		const user = await ctx.db
+			.query('users')
+			.withIndex('by_wallet', (q) => q.eq('walletAddress', args.walletAddress))
+			.unique()
+
+		if (!user) {
+			throw new Error('User not found')
+		}
+
+		// Verify content exists
+		const content = await ctx.db.get(args.contentId)
+		if (!content) {
+			throw new Error('Content not found')
+		}
+
+		// Create comment
+		const commentId = await ctx.db.insert('comments', {
+			contentId: args.contentId,
+			authorId: user._id,
+			text: args.text.trim(),
+			likeCount: 0,
+			createdAt: Date.now()
+		})
+
+		return commentId
+	}
+})
+
+export const deleteComment = mutation({
+	args: {
+		commentId: v.id('comments'),
+		walletAddress: v.string()
+	},
+	returns: v.null(),
+	handler: async (ctx, args) => {
+		// Get user by wallet address
+		const user = await ctx.db
+			.query('users')
+			.withIndex('by_wallet', (q) => q.eq('walletAddress', args.walletAddress))
+			.unique()
+
+		if (!user) {
+			throw new Error('User not found')
+		}
+
+		// Get comment
+		const comment = await ctx.db.get(args.commentId)
+		if (!comment) {
+			throw new Error('Comment not found')
+		}
+
+		// Check if user owns the comment
+		if (comment.authorId !== user._id) {
+			throw new Error('You can only delete your own comments')
+		}
+
+		// Delete comment
+		await ctx.db.delete(args.commentId)
+		return null
+	}
+})
+
+export const getComments = query({
+	args: {
+		contentId: v.id('content'),
+		limit: v.optional(v.number()),
+		offset: v.optional(v.number())
+	},
+	returns: v.array(
+		v.object({
+			_id: v.id('comments'),
+			text: v.string(),
+			likeCount: v.number(),
+			createdAt: v.number(),
+			author: v.object({
+				_id: v.id('users'),
+				name: v.string(),
+				walletAddress: v.string(),
+				avatarUrl: v.optional(v.string())
+			})
+		})
+	),
+	handler: async (ctx, args) => {
+		const limit = args.limit || 20
+		const offset = args.offset || 0
+
+		// Get comments for content
+		const comments = await ctx.db
+			.query('comments')
+			.withIndex('by_content', (q) => q.eq('contentId', args.contentId))
+			.order('desc')
+			.take(limit + offset)
+
+		// Skip offset and take limit
+		const paginatedComments = comments.slice(offset, offset + limit)
+
+		// Get author info for each comment
+		const commentsWithAuthors = await Promise.all(
+			paginatedComments.map(async (comment) => {
+				const author = await ctx.db.get(comment.authorId)
+				if (!author) {
+					throw new Error(`Author not found for comment ${comment._id}`)
+				}
+
+				return {
+					_id: comment._id,
+					text: comment.text,
+					likeCount: comment.likeCount,
+					createdAt: comment.createdAt,
+					author: {
+						_id: author._id,
+						name: author.name,
+						walletAddress: author.walletAddress,
+						avatarUrl: author.avatarUrl
+					}
+				}
+			})
+		)
+
+		return commentsWithAuthors
+	}
+})
+
+export const getCommentCount = query({
+	args: {
+		contentId: v.id('content')
+	},
+	returns: v.number(),
+	handler: async (ctx, args) => {
+		const comments = await ctx.db
+			.query('comments')
+			.withIndex('by_content', (q) => q.eq('contentId', args.contentId))
+			.collect()
+
+		return comments.length
+	}
+})

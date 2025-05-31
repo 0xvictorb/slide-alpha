@@ -5,6 +5,7 @@ import { ThumbsUp, ThumbsDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useCurrentAccount } from '@mysten/dapp-kit'
 import { toast } from 'sonner'
+import { CommentsDrawer } from './comments-drawer'
 
 interface EngagementActionsProps {
 	contentId: Id<'content'>
@@ -56,6 +57,17 @@ export function EngagementActions({ contentId }: EngagementActionsProps) {
 				<ThumbsDown className="w-6 h-6" />
 				<span className="sr-only">Dislike</span>
 			</Button>
+			<CommentsDrawer
+				contentId={contentId}
+				trigger={
+					<Button
+						variant="ghost"
+						size="icon"
+						className="text-white hover:text-primary">
+						<span className="sr-only">Comments</span>
+					</Button>
+				}
+			/>
 		</div>
 	)
 }
