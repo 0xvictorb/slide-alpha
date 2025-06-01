@@ -41,11 +41,6 @@ function TokenDisplay({ token }: { token: TokenBalance }) {
 					Balance: {token.formattedBalance} {token.symbol}
 				</div>
 			</div>
-			{Boolean(token.usdValue) && (
-				<Badge variant="neutral" className="ml-auto">
-					${token.usdValue.toFixed(2)}
-				</Badge>
-			)}
 		</div>
 	)
 }
@@ -99,7 +94,7 @@ export function TokenPromotion({ form }: TokenPromotionProps) {
 							<FormControl>
 								<Button
 									variant="neutral"
-									role="combobox"
+									role="button"
 									onClick={() => setIsSelectingToken(true)}
 									className={cn(
 										'w-full justify-between h-auto py-2',
