@@ -4,9 +4,10 @@ import type { Doc } from './_generated/dataModel'
 
 export const getThreads = query({
 	args: {
-		userId: v.id('users')
+		userId: v.optional(v.id('users'))
 	},
 	handler: async (ctx, args) => {
+		// If no userId provided, return empty array
 		if (!args.userId) return []
 
 		const threads = await ctx.db.query('threads').collect()

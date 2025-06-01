@@ -71,7 +71,7 @@ function ChatRoute() {
 	const navigate = useNavigate()
 
 	const threads = useQuery(api.chat.getThreads, {
-		userId: user?._id || ('' as Id<'users'>)
+		userId: user?._id
 	}) as Thread[] | undefined
 
 	return (
