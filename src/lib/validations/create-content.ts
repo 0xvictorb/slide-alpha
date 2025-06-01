@@ -35,6 +35,7 @@ export const createContentSchema = z
 
 		// Status
 		isPremium: z.boolean(),
+		premiumPrice: z.number().min(0).optional(),
 
 		// Token promotion
 		isPromotingToken: z.boolean(),

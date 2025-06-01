@@ -41,6 +41,7 @@ const contentSchema = defineTable({
 
 	// Status and metrics
 	isPremium: v.boolean(),
+	premiumPrice: v.optional(v.number()),
 	isActive: v.boolean(),
 	viewCount: v.number(),
 	lastViewedAt: v.optional(v.number()),

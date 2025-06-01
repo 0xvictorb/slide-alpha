@@ -438,6 +438,7 @@ export const createContent = mutation({
 
 		// Status
 		isPremium: v.boolean(),
+		premiumPrice: v.optional(v.number()),
 
 		// Token promotion
 		isPromotingToken: v.boolean(),
@@ -475,6 +476,11 @@ export const createContent = mutation({
 			)
 		}
 
+		// Validate premium price
+		if (args.isPremium && typeof args.premiumPrice !== 'number') {
+			throw new Error('Premium price is required for premium content')
+		}
+
 		// Create the content
 		const contentId = await ctx.db.insert('content', {
 			// Media info
@@ -490,6 +496,7 @@ export const createContent = mutation({
 
 			// Status and metrics
 			isPremium: args.isPremium,
+			premiumPrice: args.premiumPrice,
 			isActive: true,
 			viewCount: 0,
 			lastViewedAt: undefined,

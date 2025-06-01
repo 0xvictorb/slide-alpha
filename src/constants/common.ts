@@ -11,3 +11,14 @@ export const SC_PACKAGE_CONFIG = {
 	_7kCommissionPartner: import.meta.env.VITE_7K_COMMISSION_PARTNER || '',
 	_7kCommissionBps: import.meta.env.VITE_7K_COMMISSION_BPS || ''
 }
+
+export const VIDEO_PLATFORM_CONFIG = {
+	PACKAGE_ID:
+		'0xa8caa120c4b1811ee0aaeff40735203b83d96e39815b42f4465e6ca306761f26',
+	PLATFORM_ID:
+		'0x868aa132090a6aafc8058942ca604c149abb6bd415c018d84cdd9280f0dc4a14',
+	PLATFORM_INITIAL_SHARED_VERSION: 349179669
+} as const
+
+// Utility constants
+export const MIST_PER_SUI = 1_000_000_000 // 1 SUI = 1 billion MIST
