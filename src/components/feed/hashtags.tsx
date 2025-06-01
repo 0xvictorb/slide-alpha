@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { useNavigate } from '@tanstack/react-router'
 
 interface HashtagsProps {
 	hashtags?: string[]
@@ -12,12 +13,21 @@ export function Hashtags({
 	className,
 	onHashtagClick
 }: HashtagsProps) {
+	const navigate = useNavigate()
+
 	if (!hashtags || hashtags.length === 0) return null
 
 	const handleHashtagClick = (hashtag: string) => {
-		onHashtagClick?.(hashtag)
-		// TODO: Navigate to hashtag search or filter
-		// navigate(`/search?hashtag=${encodeURIComponent(hashtag)}`)
+		if (onHashtagClick) {
+			// If custom handler is provided, use it
+			onHashtagClick(hashtag)
+		} else {
+			// Default behavior: navigate to search page with hashtag
+			navigate({
+				to: '/search',
+				search: { hashtag, q: '' }
+			})
+		}
 	}
 
 	return (

@@ -4,6 +4,8 @@ import { Card } from '../ui/card'
 import {
 	Home01Icon,
 	PlusSignIcon,
+	Search01Icon,
+	BubbleChatIcon,
 	User03Icon
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -21,11 +23,23 @@ export function BottomNav() {
 			isActive: currentPath === '/'
 		},
 		{
+			icon: Search01Icon,
+			label: 'Search',
+			href: '/search',
+			isActive: currentPath === '/search'
+		},
+		{
 			icon: PlusSignIcon,
 			label: 'Create',
 			href: '/create',
 			isActive: currentPath === '/create',
 			isSpecial: true
+		},
+		{
+			icon: BubbleChatIcon,
+			label: 'Chat',
+			href: '/chat',
+			isActive: currentPath === '/chat'
 		},
 		{
 			icon: User03Icon,
@@ -38,17 +52,14 @@ export function BottomNav() {
 	return (
 		<div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center h-20">
 			<Card className="w-full max-w-[500px] bg-white rounded-none p-0">
-				<nav className="flex items-center justify-around p-4 gap-10 relative">
+				<nav className="flex items-center justify-around p-4 gap-0 relative">
 					{navItems.map((item) => {
 						if (item.isSpecial) {
 							return (
 								<Link
 									key={item.href}
 									to={item.href}
-									className={cn(
-										'flex flex-col items-center gap-1',
-										'absolute -top-4 left-1/2 -translate-x-1/2'
-									)}>
+									className={cn('flex flex-col items-center gap-1', '-mt-12')}>
 									<Button variant="secondary" size="icon" className="size-12">
 										<HugeiconsIcon
 											icon={item.icon}
@@ -77,7 +88,7 @@ export function BottomNav() {
 										item.isActive && 'text-secondary'
 									)}
 								/>
-								<span className="text-xs text-foreground/70">{item.label}</span>
+								<span className="text-xs text-inherit">{item.label}</span>
 							</Link>
 						)
 					})}

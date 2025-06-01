@@ -658,3 +658,119 @@ export const getCommentCount = query({
 		return comments.length
 	}
 })
+
+/**
+ * Search content by hashtags or text in title/description
+ */
+export const searchContent = query({
+	args: {
+		query: v.string(),
+		paginationOpts: paginationOptsValidator,
+		isActiveOnly: v.optional(v.boolean())
+	},
+	returns: v.object({
+		page: v.array(
+			v.object({
+				_id: v.id('content'),
+				_creationTime: v.number(),
+				contentType: v.union(v.literal('video'), v.literal('images')),
+				video: v.optional(
+					v.object({
+						cloudinaryPublicId: v.string(),
+						cloudinaryUrl: v.string(),
+						thumbnailUrl: v.string(),
+						duration: v.number()
+					})
+				),
+				images: v.optional(
+					v.array(
+						v.object({
+							cloudinaryPublicId: v.string(),
+							cloudinaryUrl: v.string(),
+							order: v.number()
+						})
+					)
+				),
+				authorId: v.id('users'),
+				title: v.string(),
+				description: v.optional(v.string()),
+				hashtags: v.optional(v.array(v.string())),
+				isPremium: v.boolean(),
+				isActive: v.boolean(),
+				viewCount: v.number(),
+				lastViewedAt: v.optional(v.number()),
+				promotedTokenId: v.optional(v.string()),
+				authorWalletAddress: v.optional(v.string()),
+				authorName: v.optional(v.string()),
+				authorAvatarUrl: v.optional(v.string())
+			})
+		),
+		isDone: v.boolean(),
+		continueCursor: v.union(v.string(), v.null())
+	}),
+	handler: async (ctx, args) => {
+		const isActiveOnly = args.isActiveOnly ?? true
+		const searchQuery = args.query.toLowerCase().trim()
+
+		// If query starts with #, treat it as hashtag search
+		const isHashtagSearch = searchQuery.startsWith('#')
+		const searchTerm = isHashtagSearch ? searchQuery.slice(1) : searchQuery
+
+		// Get all content (we'll filter in memory for now, could optimize with search indexes later)
+		let contentQuery = ctx.db.query('content').order('desc')
+
+		if (isActiveOnly) {
+			contentQuery = contentQuery.filter((q) => q.eq(q.field('isActive'), true))
+		}
+
+		const allContent = await contentQuery.collect()
+
+		// Filter content based on search criteria
+		const filteredContent = allContent.filter((content) => {
+			if (isHashtagSearch) {
+				// Search in hashtags
+				return content.hashtags?.some((hashtag) =>
+					hashtag.toLowerCase().includes(searchTerm)
+				)
+			} else {
+				// Search in title and description
+				const titleMatch = content.title.toLowerCase().includes(searchTerm)
+				const descriptionMatch = content.description
+					?.toLowerCase()
+					.includes(searchTerm)
+				const hashtagMatch = content.hashtags?.some((hashtag) =>
+					hashtag.toLowerCase().includes(searchTerm)
+				)
+
+				return titleMatch || descriptionMatch || hashtagMatch
+			}
+		})
+
+		// Apply pagination manually
+		const startIndex = args.paginationOpts.cursor
+			? parseInt(args.paginationOpts.cursor)
+			: 0
+		const endIndex = startIndex + args.paginationOpts.numItems
+		const page = filteredContent.slice(startIndex, endIndex)
+
+		// Enrich content with author data
+		const enrichedContent = await Promise.all(
+			page.map(async (content) => {
+				const author = await ctx.db.get(content.authorId)
+				return {
+					...content,
+					authorWalletAddress: author?.walletAddress,
+					authorName: author?.name,
+					authorAvatarUrl: author?.avatarUrl
+				}
+			})
+		)
+
+		return {
+			page: enrichedContent,
+			isDone: endIndex >= filteredContent.length,
+			continueCursor:
+				endIndex >= filteredContent.length ? null : endIndex.toString()
+		}
+	}
+})

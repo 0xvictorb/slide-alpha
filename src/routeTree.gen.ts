@@ -12,9 +12,12 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as CreateImport } from './routes/create'
+import { Route as ChatImport } from './routes/chat'
 import { Route as IndexImport } from './routes/index'
+import { Route as SearchIndexImport } from './routes/search/index'
 import { Route as ProfileIndexImport } from './routes/profile/index'
 import { Route as ProfileAddressIndexImport } from './routes/profile/$address/index'
+import { Route as SearchContentContentIdImport } from './routes/search/content.$contentId'
 import { Route as ProfileAddressContentContentIdImport } from './routes/profile/$address/content.$contentId'
 
 // Create/Update Routes
@@ -25,9 +28,21 @@ const CreateRoute = CreateImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const ChatRoute = ChatImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SearchIndexRoute = SearchIndexImport.update({
+  id: '/search/',
+  path: '/search/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -40,6 +55,12 @@ const ProfileIndexRoute = ProfileIndexImport.update({
 const ProfileAddressIndexRoute = ProfileAddressIndexImport.update({
   id: '/profile/$address/',
   path: '/profile/$address/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SearchContentContentIdRoute = SearchContentContentIdImport.update({
+  id: '/search/content/$contentId',
+  path: '/search/content/$contentId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -61,6 +82,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatImport
+      parentRoute: typeof rootRoute
+    }
     '/create': {
       id: '/create'
       path: '/create'
@@ -73,6 +101,20 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/search/': {
+      id: '/search/'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/search/content/$contentId': {
+      id: '/search/content/$contentId'
+      path: '/search/content/$contentId'
+      fullPath: '/search/content/$contentId'
+      preLoaderRoute: typeof SearchContentContentIdImport
       parentRoute: typeof rootRoute
     }
     '/profile/$address/': {
@@ -96,16 +138,22 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
   '/create': typeof CreateRoute
   '/profile': typeof ProfileIndexRoute
+  '/search': typeof SearchIndexRoute
+  '/search/content/$contentId': typeof SearchContentContentIdRoute
   '/profile/$address': typeof ProfileAddressIndexRoute
   '/profile/$address/content/$contentId': typeof ProfileAddressContentContentIdRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
   '/create': typeof CreateRoute
   '/profile': typeof ProfileIndexRoute
+  '/search': typeof SearchIndexRoute
+  '/search/content/$contentId': typeof SearchContentContentIdRoute
   '/profile/$address': typeof ProfileAddressIndexRoute
   '/profile/$address/content/$contentId': typeof ProfileAddressContentContentIdRoute
 }
@@ -113,8 +161,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
   '/create': typeof CreateRoute
   '/profile/': typeof ProfileIndexRoute
+  '/search/': typeof SearchIndexRoute
+  '/search/content/$contentId': typeof SearchContentContentIdRoute
   '/profile/$address/': typeof ProfileAddressIndexRoute
   '/profile/$address/content/$contentId': typeof ProfileAddressContentContentIdRoute
 }
@@ -123,22 +174,31 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/chat'
     | '/create'
     | '/profile'
+    | '/search'
+    | '/search/content/$contentId'
     | '/profile/$address'
     | '/profile/$address/content/$contentId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/chat'
     | '/create'
     | '/profile'
+    | '/search'
+    | '/search/content/$contentId'
     | '/profile/$address'
     | '/profile/$address/content/$contentId'
   id:
     | '__root__'
     | '/'
+    | '/chat'
     | '/create'
     | '/profile/'
+    | '/search/'
+    | '/search/content/$contentId'
     | '/profile/$address/'
     | '/profile/$address/content/$contentId'
   fileRoutesById: FileRoutesById
@@ -146,16 +206,22 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChatRoute: typeof ChatRoute
   CreateRoute: typeof CreateRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
+  SearchIndexRoute: typeof SearchIndexRoute
+  SearchContentContentIdRoute: typeof SearchContentContentIdRoute
   ProfileAddressIndexRoute: typeof ProfileAddressIndexRoute
   ProfileAddressContentContentIdRoute: typeof ProfileAddressContentContentIdRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChatRoute: ChatRoute,
   CreateRoute: CreateRoute,
   ProfileIndexRoute: ProfileIndexRoute,
+  SearchIndexRoute: SearchIndexRoute,
+  SearchContentContentIdRoute: SearchContentContentIdRoute,
   ProfileAddressIndexRoute: ProfileAddressIndexRoute,
   ProfileAddressContentContentIdRoute: ProfileAddressContentContentIdRoute,
 }
@@ -171,8 +237,11 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
+        "/chat",
         "/create",
         "/profile/",
+        "/search/",
+        "/search/content/$contentId",
         "/profile/$address/",
         "/profile/$address/content/$contentId"
       ]
@@ -180,11 +249,20 @@ export const routeTree = rootRoute
     "/": {
       "filePath": "index.tsx"
     },
+    "/chat": {
+      "filePath": "chat.tsx"
+    },
     "/create": {
       "filePath": "create.tsx"
     },
     "/profile/": {
       "filePath": "profile/index.tsx"
+    },
+    "/search/": {
+      "filePath": "search/index.tsx"
+    },
+    "/search/content/$contentId": {
+      "filePath": "search/content.$contentId.tsx"
     },
     "/profile/$address/": {
       "filePath": "profile/$address/index.tsx"

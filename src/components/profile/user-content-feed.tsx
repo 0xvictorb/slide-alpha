@@ -467,7 +467,7 @@ export function UserContentFeed({
 		<div
 			ref={containerRef}
 			className={cn(
-				'relative w-full overflow-hidden cursor-grab select-none',
+				'relative bg-black w-full overflow-hidden cursor-grab select-none',
 				isDragging && 'cursor-grabbing',
 				className
 			)}

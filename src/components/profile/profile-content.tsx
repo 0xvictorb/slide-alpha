@@ -276,7 +276,9 @@ export function ProfileContent({ profileAddress }: ProfileContentProps) {
 							<CardHeader className="pb-4">
 								<div className="flex items-center justify-between">
 									<CardTitle>
-										{isOwnProfile ? 'Created Videos' : `${user.name}'s Videos`}
+										{isOwnProfile
+											? 'Created Content'
+											: `${user.name}'s Content`}
 									</CardTitle>
 									<Badge variant="secondary">
 										{userContent?.length || 0} videos
