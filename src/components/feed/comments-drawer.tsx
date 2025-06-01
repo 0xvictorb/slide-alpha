@@ -73,7 +73,7 @@ export function CommentsDrawer({
 			<DrawerTrigger asChild className={className}>
 				{trigger || defaultTrigger}
 			</DrawerTrigger>
-			<DrawerContent className="max-h-[80vh]">
+			<DrawerContent className="max-h-[80vh] max-w-[780px] mx-auto">
 				<DrawerHeader className="pb-0">
 					<DrawerTitle>Comments</DrawerTitle>
 					<DrawerDescription>
