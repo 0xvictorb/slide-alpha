@@ -276,7 +276,7 @@ export function ProfileContent({ profileAddress }: ProfileContentProps) {
 													)}
 												</Button>
 												<Button
-													variant="ghost"
+													variant="secondary"
 													className="px-6"
 													onClick={handleChatClick}>
 													<MessageCircle className="h-4 w-4 mr-2" />
