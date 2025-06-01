@@ -13,7 +13,14 @@ export default defineConfig({
 		TanStackRouterVite({ target: 'react', autoCodeSplitting: true }),
 		tailwindcss(),
 		react(),
-		nodePolyfills(),
+		nodePolyfills({
+			include: ['buffer', 'stream', 'util', 'process'],
+			globals: {
+				Buffer: true,
+				global: true,
+				process: true
+			}
+		}),
 		tsconfigPaths(),
 		Unfonts({
 			google: {

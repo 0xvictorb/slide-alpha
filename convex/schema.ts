@@ -16,7 +16,8 @@ const usersSchema = defineTable({
 const imageSchema = v.object({
 	cloudinaryPublicId: v.string(),
 	cloudinaryUrl: v.string(),
-	order: v.number() // To maintain the order of images
+	order: v.number(), // To maintain the order of images
+	tuskyFileId: v.optional(v.string()) // Optional Tusky file ID for on-chain storage
 })
 
 // Video schema with thumbnail support
@@ -24,7 +25,8 @@ const videoSchema = v.object({
 	cloudinaryPublicId: v.string(),
 	cloudinaryUrl: v.string(),
 	thumbnailUrl: v.string(),
-	duration: v.number()
+	duration: v.number(),
+	tuskyFileId: v.optional(v.string()) // Optional Tusky file ID for on-chain storage
 })
 
 const contentSchema = defineTable({
@@ -46,6 +48,9 @@ const contentSchema = defineTable({
 	viewCount: v.number(),
 	lastViewedAt: v.optional(v.number()),
 
+	// Storage info
+	isOnChain: v.optional(v.boolean()), // Whether the content is stored on-chain
+
 	// Token promotion
 	promotedTokenId: v.optional(v.string()) // SUI token ID if promoting one
 })
@@ -54,6 +59,7 @@ const contentSchema = defineTable({
 	.index('by_promoted_token', ['promotedTokenId'])
 	.index('by_hashtags', ['hashtags'])
 	.index('by_content_type', ['contentType'])
+	.index('by_storage', ['isOnChain']) // New index for filtering by storage type
 
 const contentLikesSchema = defineTable({
 	contentId: v.id('content'),

@@ -4,7 +4,8 @@ import * as z from 'zod'
 const imageSchema = z.object({
 	cloudinaryPublicId: z.string(),
 	cloudinaryUrl: z.string(),
-	order: z.number()
+	order: z.number(),
+	tuskyFileId: z.string().optional()
 })
 
 // Video schema for validation
@@ -12,7 +13,8 @@ const videoSchema = z.object({
 	cloudinaryPublicId: z.string(),
 	cloudinaryUrl: z.string(),
 	thumbnailUrl: z.string(),
-	duration: z.number()
+	duration: z.number(),
+	tuskyFileId: z.string().optional()
 })
 
 export const createContentSchema = z
@@ -39,7 +41,10 @@ export const createContentSchema = z
 
 		// Token promotion
 		isPromotingToken: z.boolean(),
-		promotedTokenId: z.string().optional()
+		promotedTokenId: z.string().optional(),
+
+		// On-chain status
+		isOnChain: z.boolean().default(false)
 	})
 	.refine(
 		(data) => {

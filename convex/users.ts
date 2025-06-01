@@ -159,7 +159,8 @@ export const getUserContent = query({
 					cloudinaryPublicId: v.string(),
 					cloudinaryUrl: v.string(),
 					thumbnailUrl: v.string(),
-					duration: v.number()
+					duration: v.number(),
+					tuskyFileId: v.optional(v.string())
 				})
 			),
 			images: v.optional(
@@ -167,7 +168,8 @@ export const getUserContent = query({
 					v.object({
 						cloudinaryPublicId: v.string(),
 						cloudinaryUrl: v.string(),
-						order: v.number()
+						order: v.number(),
+						tuskyFileId: v.optional(v.string())
 					})
 				)
 			),
@@ -178,7 +180,8 @@ export const getUserContent = query({
 			isActive: v.boolean(),
 			viewCount: v.number(),
 			lastViewedAt: v.optional(v.number()),
-			promotedTokenId: v.optional(v.string())
+			promotedTokenId: v.optional(v.string()),
+			isOnChain: v.optional(v.boolean())
 		})
 	),
 	handler: async (ctx, args) => {

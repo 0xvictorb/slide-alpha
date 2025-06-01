@@ -5,7 +5,7 @@ import type { Id } from '@convex/_generated/dataModel'
 import { useNavigate } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { Loading02Icon } from '@hugeicons/core-free-icons'
+import { Loading02Icon, AiSecurity01Icon } from '@hugeicons/core-free-icons'
 import { VideoDisplay } from './video-display'
 import { ImageCarousel } from './image-carousel'
 import { EngagementActions } from './engagement-actions'
@@ -32,6 +32,7 @@ interface ContentMedia {
 	title: string
 	description?: string
 	hashtags?: string[]
+	isOnChain?: boolean
 	author: {
 		id: Id<'users'>
 		name: string
@@ -102,6 +103,7 @@ export function ContentFeed({ className }: ContentFeedProps) {
 			title: content.title,
 			description: content.description,
 			hashtags: content.hashtags,
+			isOnChain: content.isOnChain || false,
 			author: {
 				id: content.authorId,
 				name: content.authorName || 'Anonymous',
@@ -410,6 +412,21 @@ export function ContentFeed({ className }: ContentFeedProps) {
 						<>
 							{/* Dark gradient overlay at bottom for better text readability */}
 							<div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none z-5" />
+
+							{/* On-chain indicator */}
+							{content.isOnChain && (
+								<div className="absolute top-4 left-4 z-10">
+									<div className="flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full px-2 py-1">
+										<HugeiconsIcon
+											icon={AiSecurity01Icon}
+											className="w-4 h-4 text-emerald-500"
+										/>
+										<span className="text-xs font-medium text-emerald-500">
+											On-chain
+										</span>
+									</div>
+								</div>
+							)}
 
 							{/* Token information at the top */}
 							{content.promotedTokenId && (

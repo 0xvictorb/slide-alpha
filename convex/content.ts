@@ -6,14 +6,16 @@ import { paginationOptsValidator } from 'convex/server'
 const imageSchema = v.object({
 	cloudinaryPublicId: v.string(),
 	cloudinaryUrl: v.string(),
-	order: v.number()
+	order: v.number(),
+	tuskyFileId: v.optional(v.string())
 })
 
 const videoSchema = v.object({
 	cloudinaryPublicId: v.string(),
 	cloudinaryUrl: v.string(),
 	thumbnailUrl: v.string(),
-	duration: v.number()
+	duration: v.number(),
+	tuskyFileId: v.optional(v.string())
 })
 
 export const getFirstActiveContent = query({
@@ -46,23 +48,8 @@ export const getPaginatedContent = query({
 				_id: v.id('content'),
 				_creationTime: v.number(),
 				contentType: v.union(v.literal('video'), v.literal('images')),
-				video: v.optional(
-					v.object({
-						cloudinaryPublicId: v.string(),
-						cloudinaryUrl: v.string(),
-						thumbnailUrl: v.string(),
-						duration: v.number()
-					})
-				),
-				images: v.optional(
-					v.array(
-						v.object({
-							cloudinaryPublicId: v.string(),
-							cloudinaryUrl: v.string(),
-							order: v.number()
-						})
-					)
-				),
+				video: v.optional(videoSchema),
+				images: v.optional(v.array(imageSchema)),
 				authorId: v.id('users'),
 				title: v.string(),
 				description: v.optional(v.string()),
@@ -74,7 +61,8 @@ export const getPaginatedContent = query({
 				promotedTokenId: v.optional(v.string()),
 				authorWalletAddress: v.optional(v.string()),
 				authorName: v.optional(v.string()),
-				authorAvatarUrl: v.optional(v.string())
+				authorAvatarUrl: v.optional(v.string()),
+				isOnChain: v.optional(v.boolean())
 			})
 		),
 		isDone: v.boolean(),
@@ -212,23 +200,8 @@ export const getContentById = query({
 			_id: v.id('content'),
 			_creationTime: v.number(),
 			contentType: v.union(v.literal('video'), v.literal('images')),
-			video: v.optional(
-				v.object({
-					cloudinaryPublicId: v.string(),
-					cloudinaryUrl: v.string(),
-					thumbnailUrl: v.string(),
-					duration: v.number()
-				})
-			),
-			images: v.optional(
-				v.array(
-					v.object({
-						cloudinaryPublicId: v.string(),
-						cloudinaryUrl: v.string(),
-						order: v.number()
-					})
-				)
-			),
+			video: v.optional(videoSchema),
+			images: v.optional(v.array(imageSchema)),
 			authorId: v.id('users'),
 			title: v.string(),
 			description: v.optional(v.string()),
@@ -238,7 +211,8 @@ export const getContentById = query({
 			viewCount: v.number(),
 			lastViewedAt: v.optional(v.number()),
 			promotedTokenId: v.optional(v.string()),
-			authorWalletAddress: v.optional(v.string())
+			authorWalletAddress: v.optional(v.string()),
+			isOnChain: v.optional(v.boolean())
 		}),
 		v.null()
 	),
@@ -440,6 +414,9 @@ export const createContent = mutation({
 		isPremium: v.boolean(),
 		premiumPrice: v.optional(v.number()),
 
+		// Storage info
+		isOnChain: v.boolean(),
+
 		// Token promotion
 		isPromotingToken: v.boolean(),
 		promotedTokenId: v.optional(v.string()),
@@ -481,6 +458,21 @@ export const createContent = mutation({
 			throw new Error('Premium price is required for premium content')
 		}
 
+		// Validate on-chain storage
+		if (args.isOnChain) {
+			if (args.contentType === 'video' && !args.video?.tuskyFileId) {
+				throw new Error('Tusky file ID is required for on-chain video storage')
+			}
+			if (
+				args.contentType === 'images' &&
+				!args.images?.every((img) => img.tuskyFileId)
+			) {
+				throw new Error(
+					'Tusky file ID is required for all images when storing on-chain'
+				)
+			}
+		}
+
 		// Create the content
 		const contentId = await ctx.db.insert('content', {
 			// Media info
@@ -500,6 +492,9 @@ export const createContent = mutation({
 			isActive: true,
 			viewCount: 0,
 			lastViewedAt: undefined,
+
+			// Storage info
+			isOnChain: args.isOnChain,
 
 			// Token promotion
 			promotedTokenId: args.isPromotingToken ? args.promotedTokenId : undefined
@@ -681,23 +676,8 @@ export const searchContent = query({
 				_id: v.id('content'),
 				_creationTime: v.number(),
 				contentType: v.union(v.literal('video'), v.literal('images')),
-				video: v.optional(
-					v.object({
-						cloudinaryPublicId: v.string(),
-						cloudinaryUrl: v.string(),
-						thumbnailUrl: v.string(),
-						duration: v.number()
-					})
-				),
-				images: v.optional(
-					v.array(
-						v.object({
-							cloudinaryPublicId: v.string(),
-							cloudinaryUrl: v.string(),
-							order: v.number()
-						})
-					)
-				),
+				video: v.optional(videoSchema),
+				images: v.optional(v.array(imageSchema)),
 				authorId: v.id('users'),
 				title: v.string(),
 				description: v.optional(v.string()),

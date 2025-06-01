@@ -9,12 +9,16 @@ import { Progress } from '@/components/ui/progress'
 import { Upload, X, Play } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
 import { useCloudinaryUpload } from '@/lib/cloudinary'
+import { useTuskyUpload } from '@/hooks/use-tusky-upload'
+import { Upload02Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 
 interface CloudinaryUploadResult {
 	publicId: string
 	url: string
 	thumbnail?: string
 	duration?: number
+	tuskyFileId?: string
 }
 
 interface FileUploaderProps {
@@ -22,9 +26,11 @@ interface FileUploaderProps {
 	accept?: string
 	maxSize?: number // in MB
 	onUploadComplete?: (
-		result: CloudinaryUploadResult | CloudinaryUploadResult[]
+		result: CloudinaryUploadResult | CloudinaryUploadResult[],
+		files: File[]
 	) => void
 	multiple?: boolean
+	enableTusky?: boolean
 }
 
 interface FilePreviewProps {
@@ -83,6 +89,7 @@ interface FileItemProps {
 	status: 'idle' | 'uploading' | 'completed' | 'error'
 	errorMessage?: string
 	onReplace: () => void
+	tuskyProgress?: number
 }
 
 function FileItem({
@@ -92,7 +99,8 @@ function FileItem({
 	isUploading,
 	uploadProgress,
 	status,
-	errorMessage
+	errorMessage,
+	tuskyProgress
 }: FileItemProps) {
 	return (
 		<div className="w-full space-y-4 p-4 bg-white rounded-lg shadow-sm border">
@@ -141,10 +149,20 @@ function FileItem({
 
 			{isUploading && (
 				<div className="space-y-2">
-					<Progress value={uploadProgress} />
-					<p className="text-xs text-center text-gray-500">
-						Uploading... {uploadProgress}%
-					</p>
+					<div className="space-y-1">
+						<Progress value={uploadProgress} />
+						<p className="text-xs text-center text-gray-500">
+							Cloudinary: {uploadProgress}%
+						</p>
+					</div>
+					{tuskyProgress !== undefined && (
+						<div className="space-y-1">
+							<Progress value={tuskyProgress} />
+							<p className="text-xs text-center text-gray-500">
+								Tusky: {tuskyProgress}%
+							</p>
+						</div>
+					)}
 				</div>
 			)}
 		</div>
@@ -156,10 +174,62 @@ export function FileUploader({
 	accept = 'image/*,video/*',
 	maxSize = 50,
 	onUploadComplete,
-	multiple = false
+	multiple = false,
+	enableTusky = false
 }: FileUploaderProps) {
 	const currentAccount = useCurrentAccount()
-	const upload = useCloudinaryUpload()
+	const cloudinaryUpload = useCloudinaryUpload()
+	const tuskyUpload = useTuskyUpload({
+		onProgress: (progress) => {
+			const fileId = selectedFiles[0]?.name
+			const fileSize = selectedFiles[0]?.size
+			if (fileId) {
+				setUploadStatuses((prev) => {
+					const newStatuses = new Map(prev)
+					const currentStatus = newStatuses.get(fileId)
+					if (currentStatus) {
+						newStatuses.set(fileId, {
+							...currentStatus,
+							tuskyProgress: Math.round((progress / fileSize) * 100)
+						})
+					}
+					return newStatuses
+				})
+			}
+		},
+		onSuccess: (uploadId) => {
+			console.log('Tusky upload success:', uploadId)
+			toast.success('File uploaded to Tusky successfully')
+			// Update the upload status with the Tusky file ID
+			const fileId = selectedFiles[0]?.name
+			if (fileId) {
+				setUploadStatuses((prev) => {
+					const newStatuses = new Map(prev)
+					const currentStatus = newStatuses.get(fileId)
+					if (currentStatus && currentStatus.result) {
+						const updatedResult = {
+							...currentStatus.result,
+							tuskyFileId: uploadId
+						}
+						newStatuses.set(fileId, {
+							...currentStatus,
+							result: updatedResult
+						})
+						// Trigger onUploadComplete with the updated result
+						if (onUploadComplete) {
+							onUploadComplete(updatedResult, selectedFiles)
+						}
+					}
+					return newStatuses
+				})
+			}
+		},
+		onError: (error) => {
+			console.error('Tusky upload error:', error)
+			toast.error('Failed to upload to Tusky')
+		}
+	})
+
 	const currentUser = useQuery(api.users.getCurrentUser, {
 		walletAddress: currentAccount?.address ?? ''
 	})
@@ -170,6 +240,7 @@ export function FileUploader({
 			string,
 			{
 				progress: number
+				tuskyProgress?: number
 				status: 'idle' | 'uploading' | 'completed' | 'error'
 				error?: string
 				result?: CloudinaryUploadResult
@@ -219,12 +290,13 @@ export function FileUploader({
 				const newStatuses = new Map(prev)
 				newStatuses.set(file.name, {
 					progress: 0,
+					tuskyProgress: enableTusky ? 0 : undefined,
 					status: 'uploading'
 				})
 				return newStatuses
 			})
 
-			// Create progress simulation
+			// Create progress simulation for Cloudinary
 			const intervalId = window.setInterval(() => {
 				setUploadStatuses((prev) => {
 					const newStatuses = new Map(prev)
@@ -240,7 +312,11 @@ export function FileUploader({
 			}, 500)
 			progressIntervalsRef.current.set(file.name, intervalId)
 
-			const result = await upload(file)
+			// Start both uploads in parallel
+			const [cloudinaryResult, tuskyId] = await Promise.all([
+				cloudinaryUpload(file),
+				enableTusky ? tuskyUpload.upload(file) : Promise.resolve(undefined)
+			])
 
 			// Clear the progress interval
 			window.clearInterval(intervalId)
@@ -248,19 +324,23 @@ export function FileUploader({
 
 			// Transform and store the result
 			const transformedResult: CloudinaryUploadResult = {
-				publicId: result.public_id,
-				url: result.media_url,
-				...(result.resource_type === 'video' &&
-					result.thumbnail && {
-						thumbnail: result.thumbnail,
-						duration: result.duration
-					})
+				publicId: cloudinaryResult.public_id,
+				url: cloudinaryResult.media_url,
+				...(cloudinaryResult.resource_type === 'video' &&
+					cloudinaryResult.thumbnail && {
+						thumbnail: cloudinaryResult.thumbnail,
+						duration: cloudinaryResult.duration
+					}),
+				...(tuskyId && { tuskyFileId: tuskyId.uploadId })
 			}
 
 			setUploadStatuses((prev) => {
 				const newStatuses = new Map(prev)
+				const currentStatus = newStatuses.get(file.name)
 				newStatuses.set(file.name, {
+					...currentStatus,
 					progress: 100,
+					tuskyProgress: enableTusky ? 100 : undefined,
 					status: 'completed',
 					result: transformedResult
 				})
@@ -283,9 +363,10 @@ export function FileUploader({
 					}
 
 					if (onUploadComplete) {
-						onUploadComplete(multiple ? results : results[0])
+						onUploadComplete(multiple ? results : results[0], selectedFiles)
 					}
-					toast.success('All files uploaded successfully')
+
+					toast.success('File uploaded successfully')
 				}
 
 				return newStatuses
@@ -303,6 +384,8 @@ export function FileUploader({
 			})
 			window.clearInterval(progressIntervalsRef.current.get(file.name))
 			progressIntervalsRef.current.delete(file.name)
+
+			toast.error('Failed to upload file')
 		}
 	}
 
@@ -370,8 +453,11 @@ export function FileUploader({
 				<input {...getInputProps()} />
 
 				{selectedFiles.length === 0 ? (
-					<div className="flex flex-col items-center gap-2 text-center h-full justify-center">
-						<Upload className="w-10 h-10 text-gray-400" />
+					<div className="flex flex-col items-center gap-2 text-center h-full justify-center mt-6">
+						<HugeiconsIcon
+							icon={Upload02Icon}
+							className="w-10 h-10 text-gray-400"
+						/>
 						<div className="flex flex-col gap-1">
 							<p className="text-sm text-gray-500">
 								Choose {multiple ? 'files' : 'a file'}
@@ -411,6 +497,7 @@ export function FileUploader({
 									}}
 									isUploading={status?.status === 'uploading'}
 									uploadProgress={status?.progress ?? 0}
+									tuskyProgress={status?.tuskyProgress}
 									status={status?.status ?? 'idle'}
 									errorMessage={status?.error}
 								/>
