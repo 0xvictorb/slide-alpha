@@ -114,6 +114,32 @@ export const updateProfile = mutation({
 })
 
 /**
+ * Update user avatar URL
+ */
+export const updateAvatar = mutation({
+	args: {
+		walletAddress: v.string(),
+		avatarUrl: v.string()
+	},
+	returns: v.null(),
+	handler: async (ctx, args) => {
+		// Find the user by wallet address
+		const user = await ctx.db
+			.query('users')
+			.withIndex('by_wallet', (q) => q.eq('walletAddress', args.walletAddress))
+			.unique()
+
+		if (!user) {
+			throw new Error('User not found')
+		}
+
+		// Update user avatar
+		await ctx.db.patch(user._id, { avatarUrl: args.avatarUrl })
+		return null
+	}
+})
+
+/**
  * Get user's content for their profile page
  */
 export const getUserContent = query({

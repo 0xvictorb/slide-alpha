@@ -122,7 +122,7 @@ function FileItem({
 				<div className="flex items-center gap-2">
 					{status === 'completed' && (
 						<Button
-							variant="outline"
+							variant="neutral"
 							size="sm"
 							onClick={onReplace}
 							disabled={isUploading}>
@@ -130,7 +130,7 @@ function FileItem({
 						</Button>
 					)}
 					<Button
-						variant="ghost"
+						variant="neutral"
 						size="icon"
 						onClick={onRemove}
 						disabled={isUploading}>
@@ -373,10 +373,11 @@ export function FileUploader({
 					<div className="flex flex-col items-center gap-2 text-center h-full justify-center">
 						<Upload className="w-10 h-10 text-gray-400" />
 						<div className="flex flex-col gap-1">
-							<Button variant="ghost" disabled={false}>
+							<p className="text-sm text-gray-500">
 								Choose {multiple ? 'files' : 'a file'}
-							</Button>
-							<p className="text-sm text-gray-500">or drag and drop</p>
+								<br />
+								or drag and drop
+							</p>
 						</div>
 						<p className="text-xs text-gray-400">
 							{accept} (max {maxSize}MB)

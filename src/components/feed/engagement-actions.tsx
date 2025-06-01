@@ -1,11 +1,15 @@
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import type { Id } from '@convex/_generated/dataModel'
-import { ThumbsUp, ThumbsDown, MessageCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { useCurrentAccount } from '@mysten/dapp-kit'
 import { toast } from 'sonner'
 import { CommentsDrawer } from './comments-drawer'
+import { Message01Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import IconLike from '@/assets/icons/like.svg?react'
+import IconLikeFilled from '@/assets/icons/like-filled.svg?react'
+import IconDislike from '@/assets/icons/dislike.svg?react'
+import IconDislikeFilled from '@/assets/icons/dislike-filled.svg?react'
 
 interface EngagementActionsProps {
 	contentId: Id<'content'>
@@ -57,18 +61,20 @@ export function EngagementActions({ contentId }: EngagementActionsProps) {
 		<div className="flex flex-col gap-4">
 			{/* Like Button */}
 			<div className="flex flex-col items-center gap-1">
-				<Button
-					variant="ghost"
-					size="icon"
+				<button
 					onClick={() => handleLike('like')}
 					className={
 						userLike === 'like'
-							? 'text-primary'
-							: 'text-white hover:text-primary'
+							? 'text-secondary'
+							: 'text-white hover:text-secondary'
 					}>
-					<ThumbsUp className="w-6 h-6" />
+					{userLike === 'like' ? (
+						<IconLikeFilled className="w-6 h-6" />
+					) : (
+						<IconLike className="w-6 h-6" />
+					)}
 					<span className="sr-only">Like</span>
-				</Button>
+				</button>
 				{contentStats && (
 					<span className="text-white text-xs font-medium">
 						{formatCount(contentStats.likes)}
@@ -78,18 +84,20 @@ export function EngagementActions({ contentId }: EngagementActionsProps) {
 
 			{/* Dislike Button */}
 			<div className="flex flex-col items-center gap-1">
-				<Button
-					variant="ghost"
-					size="icon"
+				<button
 					onClick={() => handleLike('dislike')}
 					className={
 						userLike === 'dislike'
-							? 'text-red-500'
-							: 'text-white hover:text-red-500'
+							? 'text-red-600'
+							: 'text-white hover:text-red-600'
 					}>
-					<ThumbsDown className="w-6 h-6" />
+					{userLike === 'dislike' ? (
+						<IconDislikeFilled className="w-6 h-6" />
+					) : (
+						<IconDislike className="w-6 h-6" />
+					)}
 					<span className="sr-only">Dislike</span>
-				</Button>
+				</button>
 				{contentStats && (
 					<span className="text-white text-xs font-medium">
 						{formatCount(contentStats.dislikes)}
@@ -102,13 +110,14 @@ export function EngagementActions({ contentId }: EngagementActionsProps) {
 				<CommentsDrawer
 					contentId={contentId}
 					trigger={
-						<Button
-							variant="ghost"
-							size="icon"
-							className="text-white hover:text-primary">
-							<MessageCircle className="w-6 h-6" />
+						<button className="text-white hover:text-primary">
+							<HugeiconsIcon
+								onClick={() => handleLike('dislike')}
+								icon={Message01Icon}
+								size={24}
+							/>
 							<span className="sr-only">Comments</span>
-						</Button>
+						</button>
 					}
 				/>
 				{commentCount !== undefined && (

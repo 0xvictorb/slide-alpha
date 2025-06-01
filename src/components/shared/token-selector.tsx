@@ -27,7 +27,7 @@ interface TokenItemProps {
 function TokenItem({ token, onSelect, selected }: TokenItemProps) {
 	return (
 		<Button
-			variant="ghost"
+			variant="neutral"
 			className={`w-full h-auto justify-start gap-4 px-4 py-3 transition-all duration-200 hover:bg-accent/50 ${
 				selected ? 'bg-accent' : ''
 			}`}

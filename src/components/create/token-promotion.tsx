@@ -42,7 +42,7 @@ function TokenDisplay({ token }: { token: TokenBalance }) {
 				</div>
 			</div>
 			{Boolean(token.usdValue) && (
-				<Badge variant="secondary" className="ml-auto">
+				<Badge variant="neutral" className="ml-auto">
 					${token.usdValue.toFixed(2)}
 				</Badge>
 			)}
@@ -98,7 +98,7 @@ export function TokenPromotion({ form }: TokenPromotionProps) {
 							<FormLabel>Select Token</FormLabel>
 							<FormControl>
 								<Button
-									variant="outline"
+									variant="neutral"
 									role="combobox"
 									onClick={() => setIsSelectingToken(true)}
 									className={cn(

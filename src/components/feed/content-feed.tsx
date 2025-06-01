@@ -4,13 +4,15 @@ import { api } from '@convex/_generated/api'
 import type { Id } from '@convex/_generated/dataModel'
 import { useNavigate } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Loading02Icon } from '@hugeicons/core-free-icons'
 import { VideoDisplay } from './video-display'
 import { ImageCarousel } from './image-carousel'
 import { EngagementActions } from './engagement-actions'
 import { TokenInfo } from './token-info'
 import { UserProfile } from './user-profile'
 import { Hashtags } from './hashtags'
-import { SplashScreen } from '@/components/splash'
+import { SplashScreen, hasCompletedSplash } from '@/components/splash'
 
 interface ContentFeedProps {
 	className?: string
@@ -45,7 +47,7 @@ export function ContentFeed({ className }: ContentFeedProps) {
 	const [cursor, setCursor] = useState<string | null>(null)
 	const [hasMore, setHasMore] = useState(true)
 	const [shouldLoadMore, setShouldLoadMore] = useState(false)
-	const [showSplash, setShowSplash] = useState(true)
+	const [showSplash, setShowSplash] = useState(!hasCompletedSplash())
 	const [audioEnabled, setAudioEnabled] = useState(false)
 
 	// Enhanced drag/swipe state for TikTok-like experience
@@ -95,7 +97,7 @@ export function ContentFeed({ className }: ContentFeedProps) {
 	const formatContentItem = useCallback((content: any): ContentMedia => {
 		const baseContent = {
 			id: content._id,
-			promotedTokenId: content.promotedTokenId,
+			promotedTokenId: content.promotedTokenId || '',
 			creatorAddress: content.authorWalletAddress || '',
 			title: content.title,
 			description: content.description,
@@ -408,7 +410,7 @@ export function ContentFeed({ className }: ContentFeedProps) {
 						<>
 							{/* Token information at the top */}
 							{content.promotedTokenId && (
-								<div className="absolute bottom-4 left-4 right-4 z-10">
+								<div className="absolute bottom-5 left-4 right-4 z-10">
 									<TokenInfo
 										tokenId={content.promotedTokenId}
 										className="w-full"
@@ -420,8 +422,8 @@ export function ContentFeed({ className }: ContentFeedProps) {
 							{/* Engagement actions on the right side */}
 							<div
 								className={cn(
-									'absolute bottom-4 right-4 z-10',
-									content.promotedTokenId ? 'bottom-24' : 'bottom-4'
+									'absolute bottom-5 right-4 z-10',
+									content.promotedTokenId ? 'bottom-28' : 'bottom-5'
 								)}>
 								<EngagementActions contentId={content.id} />
 							</div>
@@ -429,8 +431,8 @@ export function ContentFeed({ className }: ContentFeedProps) {
 							{/* Bottom section with user info and content */}
 							<div
 								className={cn(
-									'absolute bottom-4 left-4 right-20 z-10',
-									content.promotedTokenId ? 'bottom-24' : 'bottom-4'
+									'absolute bottom-5 left-4 right-20 z-10',
+									content.promotedTokenId ? 'bottom-28' : 'bottom-5'
 								)}>
 								{/* User Profile */}
 								<div className="mb-3">
@@ -498,6 +500,7 @@ export function ContentFeed({ className }: ContentFeedProps) {
 									onPlay={() => {}}
 									audioEnabled={false}
 									className="w-full h-full"
+									showEnhancedControls={true}
 								/>
 							) : currentContent ? (
 								<ImageCarousel
@@ -524,8 +527,16 @@ export function ContentFeed({ className }: ContentFeedProps) {
 	if (contentList.length === 0) {
 		return (
 			<div
-				className={cn('flex items-center justify-center h-[100vh]', className)}>
-				<p className="text-gray-500">Loading...</p>
+				className={cn(
+					'flex items-center justify-center h-[100vh] bg-black',
+					className
+				)}>
+				<div className="flex flex-col items-center space-y-4">
+					<HugeiconsIcon
+						icon={Loading02Icon}
+						className="w-8 h-8 text-white animate-spin"
+					/>
+				</div>
 			</div>
 		)
 	}

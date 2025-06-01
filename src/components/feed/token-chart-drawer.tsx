@@ -103,7 +103,7 @@ export function TokenChartDrawer({
 											/>
 											<Button
 												type="button"
-												variant="outline"
+												variant="neutral"
 												size="sm"
 												onClick={() => setAmount('0')}>
 												Max

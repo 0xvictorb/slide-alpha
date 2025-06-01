@@ -26,7 +26,7 @@ export const generateUploadSignature = action({
 		folder: v.optional(v.string()),
 		publicId: v.optional(v.string())
 	},
-	handler: async (ctx, args) => {
+	handler: async (_ctx, args) => {
 		const { timestamp, folder, publicId } = args
 
 		// Parameters to sign

@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import type { UseFormReturn } from 'react-hook-form'
 import { createContentSchema } from '@/lib/validations/create-content'
 import { z } from 'zod'
+import { useState } from 'react'
 
 type FormData = z.infer<typeof createContentSchema>
 
@@ -19,6 +20,16 @@ interface ContentInfoProps {
 }
 
 export function ContentInfo({ form }: ContentInfoProps) {
+	const [hashtagInput, setHashtagInput] = useState('')
+
+	const processHashtags = (input: string) => {
+		return input
+			.split(' ')
+			.map((tag) => tag.trim())
+			.filter((tag) => tag.length > 0)
+			.map((tag) => (tag.startsWith('#') ? tag : `#${tag}`))
+	}
+
 	return (
 		<>
 			<FormField
@@ -62,18 +73,18 @@ export function ContentInfo({ form }: ContentInfoProps) {
 						<FormControl>
 							<Input
 								placeholder="Enter hashtags separated by spaces"
-								onChange={(e) =>
-									field.onChange(
-										e.target.value
-											.split(' ')
-											.filter((tag) => tag.startsWith('#'))
-									)
-								}
-								value={field.value?.join(' ') || ''}
+								value={hashtagInput}
+								onChange={(e) => setHashtagInput(e.target.value)}
+								onBlur={() => {
+									const hashtags = processHashtags(hashtagInput)
+									field.onChange(hashtags)
+									setHashtagInput(hashtags.join(' '))
+								}}
 							/>
 						</FormControl>
 						<FormDescription>
-							Start each hashtag with # (e.g., #crypto #trading)
+							Start each hashtag with # (e.g., #crypto #trading) or just type
+							words and # will be added automatically
 						</FormDescription>
 						<FormMessage />
 					</FormItem>

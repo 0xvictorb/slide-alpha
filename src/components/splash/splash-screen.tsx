@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const SPLASH_STORAGE_KEY = 'slide-alpha-splash-completed'
@@ -65,84 +64,45 @@ export function SplashScreen({
 	return (
 		<div
 			className={cn(
-				'fixed inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 z-[100]',
+				'fixed inset-0 bg-gradient-to-br from-main via-background to-main z-[100]',
 				'flex items-center justify-center p-4',
 				className
 			)}>
 			{/* Animated background */}
 			<div className="absolute inset-0 overflow-hidden">
-				<div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-blue-500/20 to-indigo-500/20 animate-pulse"></div>
+				<div className="absolute inset-0 bg-gradient-to-br from-main/20 via-background/40 to-main/20 animate-pulse"></div>
 			</div>
 
 			{/* Main content */}
-			<div className="relative z-10 text-center max-w-sm mx-auto">
+			<div className="relative z-10 text-center max-w-lg mx-auto">
 				{/* Logo */}
-				<div className="mb-12">
-					<div className="flex items-center justify-center mb-6">
-						<div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center backdrop-blur-sm border border-white/20">
-							<Sparkles className="w-10 h-10 text-white" />
-						</div>
+				<div className="mb-16">
+					<div className="flex items-center justify-center mb-8">
+						<img src="/logo.webp" alt="Swipe Fun" className="w-80 h-auto" />
 					</div>
-					<h1 className="text-3xl font-bold text-white mb-2">Slide Alpha</h1>
-					<p className="text-white/70 text-lg">Loading your experience...</p>
 				</div>
 
 				{/* Loading Section */}
 				{!showExploreButton ? (
-					<div className="mb-8">
+					<div className="mb-12">
 						{/* Loading Bar */}
-						<div className="w-full bg-white/20 rounded-full h-3 mb-4 overflow-hidden">
+						<div className="w-full bg-foreground/20 rounded-full h-3 mb-2 overflow-hidden">
 							<div
-								className="h-full bg-gradient-to-r from-purple-400 to-blue-400 rounded-full transition-all duration-300 ease-out"
+								className="h-full bg-gradient-to-r from-main to-main-foreground rounded-full transition-all duration-300 ease-out"
 								style={{ width: `${loadingProgress}%` }}
 							/>
 						</div>
 
-						{/* Loading Text */}
-						<p className="text-white/60 text-sm">
-							{loadingProgress < 30 && 'Initializing platform...'}
-							{loadingProgress >= 30 &&
-								loadingProgress < 60 &&
-								'Loading content...'}
-							{loadingProgress >= 60 &&
-								loadingProgress < 80 &&
-								'Preparing videos...'}
-							{loadingProgress >= 80 &&
-								loadingProgress < 100 &&
-								'Almost ready...'}
-							{loadingProgress === 100 && 'Ready to explore!'}
-						</p>
+						<p className="text-main-foreground text-sm">Loading...</p>
 					</div>
 				) : (
-					<div className="mb-8 opacity-0 translate-y-2 animate-[fadeIn_0.5s_ease-out_forwards]">
-						{/* Success Animation */}
-						<div className="w-16 h-16 mx-auto mb-4 bg-green-500/20 rounded-full flex items-center justify-center">
-							<div className="w-8 h-8 text-green-400">✓</div>
-						</div>
-						<p className="text-white/80 text-lg mb-6">Everything is ready!</p>
-
+					<div className="mb-12 opacity-0 translate-y-2 animate-[fadeIn_0.5s_ease-out_forwards]">
 						{/* Explore Button */}
-						<Button
-							onClick={handleExplore}
-							disabled={isLaunching}
-							size="lg"
-							className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:scale-100 border-0">
-							{isLaunching ? (
-								<div className="flex items-center gap-2">
-									<div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
-									<span>Launching...</span>
-								</div>
-							) : (
-								<span>Explore Slide Alpha</span>
-							)}
+						<Button onClick={handleExplore} disabled={isLaunching} size="lg">
+							<span>Start Exploring</span>
 						</Button>
 					</div>
 				)}
-
-				{/* Footer */}
-				<p className="text-white/40 text-xs">
-					Swipe up and down to navigate • Connect wallet to trade
-				</p>
 			</div>
 		</div>
 	)
@@ -152,7 +112,7 @@ export function SplashScreen({
  * Check if user has completed splash screen
  */
 export const hasCompletedSplash = () => {
-	return localStorage.getItem(SPLASH_STORAGE_KEY) === 'true'
+	return localStorage.getItem(SPLASH_STORAGE_KEY)?.toString() === 'true'
 }
 
 /**

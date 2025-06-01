@@ -8,7 +8,7 @@ import { WalletGuard } from '@/components/guards/wallet-guard'
 import { MediaUpload } from '@/components/create/media-upload'
 import { ContentInfo } from '@/components/create/content-info'
 import { TokenPromotion } from '@/components/create/token-promotion'
-import { PremiumContent } from '@/components/create/premium-content'
+// import { PremiumContent } from '@/components/create/premium-content'
 import { createContentSchema } from '@/lib/validations/create-content'
 import { z } from 'zod'
 import { useCurrentAccount } from '@mysten/dapp-kit'
@@ -16,12 +16,39 @@ import { useMutation } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { toast } from 'sonner'
 import { useNavigate } from '@tanstack/react-router'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { ArrowLeft01Icon } from '@hugeicons/core-free-icons'
 
 type FormData = z.infer<typeof createContentSchema>
 
 export const Route = createFileRoute('/create')({
 	component: CreatePage
 })
+
+function CreateHeader() {
+	const navigate = useNavigate()
+
+	return (
+		<div className="sticky top-0 z-50 bg-white/95 border-b-2 border-border">
+			<div className="flex items-center justify-between px-4 py-3">
+				<Button
+					variant="ghost"
+					size="icon"
+					onClick={() => navigate({ to: '/' })}
+					className="size-8">
+					<HugeiconsIcon
+						icon={ArrowLeft01Icon}
+						size={20}
+						className="text-foreground"
+					/>
+				</Button>
+				<h1 className="text-lg font-semibold text-foreground">Create</h1>
+				<div className="w-10" /> {/* Spacer for center alignment */}
+			</div>
+		</div>
+	)
+}
 
 function CreatePage() {
 	const account = useCurrentAccount()
@@ -86,35 +113,35 @@ function CreatePage() {
 		}
 	}
 
-	const followerCount = 150 // TODO: Get actual follower count
+	// const followerCount = 150 // TODO: Get actual follower count
 
 	return (
 		<WalletGuard>
-			<div className="container max-w-2xl p-4 space-y-8">
-				<div>
-					<h1 className="text-2xl font-bold">Create Content</h1>
-					<p className="text-muted-foreground">
-						Share your content with the community
-					</p>
-				</div>
-
-				<Form {...form}>
-					<form
-						onSubmit={form.handleSubmit(onSubmit, (errors) => {
-							console.log(errors)
-						})}
-						className="space-y-6">
-						<MediaUpload form={form} />
-						<ContentInfo form={form} />
-						<Separator />
-						<TokenPromotion form={form} />
-						<Separator />
-						<PremiumContent form={form} followerCount={followerCount} />
-						<Button type="submit" className="w-full">
-							Create Content
-						</Button>
-					</form>
-				</Form>
+			<div className="flex flex-col h-full">
+				<CreateHeader />
+				<ScrollArea className="flex-1">
+					<div className="max-w-2xl max-h-[calc(100vh-140px)] space-y-8">
+						<Form {...form}>
+							<form
+								onSubmit={form.handleSubmit(onSubmit, (errors) => {
+									console.log(errors)
+								})}
+								className="space-y-6 py-4 px-6">
+								<MediaUpload form={form} />
+								<ContentInfo form={form} />
+								<Separator />
+								<TokenPromotion form={form} />
+								{/* <Separator />
+								<PremiumContent form={form} followerCount={followerCount} /> */}
+								<div className="pb-2">
+									<Button type="submit" className="w-full">
+										Create Content
+									</Button>
+								</div>
+							</form>
+						</Form>
+					</div>
+				</ScrollArea>
 			</div>
 		</WalletGuard>
 	)

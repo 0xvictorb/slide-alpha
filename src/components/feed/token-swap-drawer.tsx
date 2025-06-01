@@ -188,7 +188,7 @@ export function TokenSwapDrawer({
 						{/* Settings */}
 						<div className="flex justify-end">
 							<Button
-								variant="ghost"
+								variant="neutral"
 								size="sm"
 								onClick={() => setShowSlippageSettings(!showSlippageSettings)}
 								className="h-8 w-8 p-0">
@@ -225,7 +225,7 @@ export function TokenSwapDrawer({
 							<Label className="text-sm font-medium">You Pay</Label>
 							<div className="flex gap-2">
 								<Button
-									variant="outline"
+									variant="neutral"
 									className="w-[140px] justify-between"
 									onClick={() => setIsTokenInSelectorOpen(true)}>
 									<div className="flex items-center gap-2">
@@ -259,7 +259,7 @@ export function TokenSwapDrawer({
 						{/* Swap direction button */}
 						<div className="flex justify-center">
 							<Button
-								variant="outline"
+								variant="neutral"
 								size="sm"
 								onClick={handleSwapDirection}
 								className="h-8 w-8 p-0 rounded-full border-2">
@@ -272,7 +272,7 @@ export function TokenSwapDrawer({
 							<Label className="text-sm font-medium">You Receive</Label>
 							<div className="flex gap-2">
 								<Button
-									variant="outline"
+									variant="neutral"
 									className="w-[140px] justify-between"
 									onClick={() => setIsTokenOutSelectorOpen(true)}>
 									<div className="flex items-center gap-2">
@@ -347,7 +347,7 @@ export function TokenSwapDrawer({
 							)}
 						</Button>
 						<DrawerClose asChild>
-							<Button variant="outline">Cancel</Button>
+							<Button variant="neutral">Cancel</Button>
 						</DrawerClose>
 					</DrawerFooter>
 				</DrawerContent>

@@ -105,7 +105,7 @@ export function UserProfile({
 			{/* Follow Button - only show if not viewing own content */}
 			{!isOwnContent && currentAccount?.address && (
 				<Button
-					variant={isFollowing ? 'secondary' : 'default'}
+					variant={isFollowing ? 'neutral' : 'default'}
 					size="sm"
 					onClick={handleFollowToggle}
 					disabled={isFollowLoading}

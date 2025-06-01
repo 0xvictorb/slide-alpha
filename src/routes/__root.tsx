@@ -52,7 +52,7 @@ export const Route = createRootRoute({
 							<Outlet />
 						</RootLayout>
 						<GlobalHooks />
-						<Toaster richColors />
+						<Toaster />
 					</NiceModal.Provider>
 				</WalletProvider>
 			</SuiClientProvider>

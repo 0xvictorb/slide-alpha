@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useInView } from 'react-intersection-observer'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 import { OptimizedImage } from '@/components/shared/optimized-image'
+import {
+	Carousel,
+	CarouselContent,
+	CarouselItem,
+	CarouselNext,
+	CarouselPrevious,
+	type CarouselApi
+} from '@/components/ui/carousel'
 
 interface ImageCarouselProps {
 	images: Array<{
@@ -19,7 +25,9 @@ export function ImageCarousel({
 	className,
 	onView
 }: ImageCarouselProps) {
-	const [currentIndex, setCurrentIndex] = useState(0)
+	const [api, setApi] = useState<CarouselApi>()
+	const [current, setCurrent] = useState(0)
+	const [count, setCount] = useState(0)
 	const [hasViewed, setHasViewed] = useState(false)
 
 	// Use intersection observer to detect when carousel is in view
@@ -35,13 +43,18 @@ export function ImageCarousel({
 		}
 	}, [inView, hasViewed, onView])
 
-	const nextImage = () => {
-		setCurrentIndex((prev) => (prev + 1) % images.length)
-	}
+	useEffect(() => {
+		if (!api) {
+			return
+		}
 
-	const previousImage = () => {
-		setCurrentIndex((prev) => (prev - 1 + images.length) % images.length)
-	}
+		setCount(api.scrollSnapList().length)
+		setCurrent(api.selectedScrollSnap() + 1)
+
+		api.on('select', () => {
+			setCurrent(api.selectedScrollSnap() + 1)
+		})
+	}, [api])
 
 	if (!images.length) {
 		return null
@@ -54,39 +67,40 @@ export function ImageCarousel({
 				'relative w-full h-full flex items-center justify-center bg-black',
 				className
 			)}>
-			<div className="relative w-full h-full max-w-[calc(100vh*9/16)] max-h-screen">
-				{/* Current Image */}
-				<OptimizedImage
-					src={images[currentIndex].url}
-					alt={images[currentIndex].alt || `Image ${currentIndex + 1}`}
-					className="w-full h-full object-contain"
-				/>
+			<Carousel
+				setApi={setApi}
+				className="w-full h-full flex items-center justify-center"
+				opts={{
+					align: 'start',
+					loop: true
+				}}>
+				<CarouselContent className="h-full w-full -ml-1">
+					{images.map((image, index) => (
+						<CarouselItem key={index} className="h-full">
+							<div className="h-full flex items-center justify-center">
+								<OptimizedImage
+									src={image.url}
+									alt={image.alt || `Image ${index + 1}`}
+									className="w-full h-full object-contain"
+								/>
+							</div>
+						</CarouselItem>
+					))}
+				</CarouselContent>
 
 				{/* Navigation Buttons - Only show if there are multiple images */}
 				{images.length > 1 && (
 					<>
-						<Button
-							variant="ghost"
-							size="icon"
-							className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white hover:bg-black/70"
-							onClick={previousImage}>
-							<ChevronLeft className="w-6 h-6" />
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon"
-							className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white hover:bg-black/70"
-							onClick={nextImage}>
-							<ChevronRight className="w-6 h-6" />
-						</Button>
+						<CarouselPrevious className="left-2 bg-black/50 border-none text-white hover:bg-black/70" />
+						<CarouselNext className="right-2 bg-black/50 border-none text-white hover:bg-black/70" />
 
 						{/* Image Counter */}
 						<div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-2 py-1 rounded-full text-sm">
-							{currentIndex + 1} / {images.length}
+							{current} / {count}
 						</div>
 					</>
 				)}
-			</div>
+			</Carousel>
 		</div>
 	)
 }

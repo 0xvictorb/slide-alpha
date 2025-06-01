@@ -378,7 +378,7 @@ export function UserContentFeed({
 							<div className="absolute top-4 left-4 z-20">
 								<Button
 									onClick={handleBackToProfile}
-									variant="ghost"
+									variant="neutral"
 									size="sm"
 									className="bg-black/20 backdrop-blur-sm text-white hover:bg-black/40">
 									<ArrowLeft className="h-4 w-4 mr-2" />
@@ -388,7 +388,7 @@ export function UserContentFeed({
 
 							{/* Token information at the bottom */}
 							{content.promotedTokenId && (
-								<div className="absolute bottom-4 left-4 right-4 z-10">
+								<div className="absolute bottom-5 left-4 right-4 z-10">
 									<TokenInfo
 										tokenId={content.promotedTokenId}
 										className="w-full"
@@ -400,8 +400,8 @@ export function UserContentFeed({
 							{/* Engagement actions on the right side */}
 							<div
 								className={cn(
-									'absolute bottom-4 right-4 z-10',
-									content.promotedTokenId ? 'bottom-24' : 'bottom-4'
+									'absolute bottom-5 right-4 z-10',
+									content.promotedTokenId ? 'bottom-28' : 'bottom-5'
 								)}>
 								<EngagementActions contentId={content.id} />
 							</div>
@@ -410,7 +410,7 @@ export function UserContentFeed({
 							<div
 								className={cn(
 									'absolute bottom-4 left-4 right-20 z-10',
-									content.promotedTokenId ? 'bottom-24' : 'bottom-4'
+									content.promotedTokenId ? 'bottom-28' : 'bottom-5'
 								)}>
 								{/* User Profile */}
 								<div className="mb-3">

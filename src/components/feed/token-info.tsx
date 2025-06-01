@@ -6,6 +6,8 @@ import { LineChart, TrendingUp, TrendingDown } from 'lucide-react'
 import { useState } from 'react'
 import { TokenChartDrawer } from './token-chart-drawer'
 import { TokenSwapDrawer } from './token-swap-drawer'
+import { Card } from '../ui/card'
+import { motion } from 'framer-motion'
 
 interface TokenInfoProps {
 	tokenId: string
@@ -24,46 +26,42 @@ export function TokenInfo({ tokenId, className, kolAddress }: TokenInfoProps) {
 	if (!token) return null
 
 	const displayPrice = token.usdPrice || 0
-	const priceChangeColor = priceChange >= 0 ? 'text-green-500' : 'text-red-500'
+	const priceChangeColor = priceChange >= 0 ? 'text-chart-1' : 'text-chart-4'
 	const PriceIcon = priceChange >= 0 ? TrendingUp : TrendingDown
 
 	return (
 		<>
-			<div
-				className={`bg-black/10 backdrop-blur-sm border border-white/10 rounded-lg w-fit ${className}`}>
-				<div className="flex items-center justify-between p-3 space-y-2">
-					<div className="flex items-center justify-between gap-2">
-						<div className="flex items-center gap-2 flex-1 min-w-0">
+			<motion.div
+				initial={{ opacity: 0, y: 20 }}
+				whileInView={{ opacity: 1, y: 0 }}
+				viewport={{ once: true, margin: '-50px' }}
+				transition={{ duration: 0.4, ease: 'easeOut' }}>
+				<Card
+					className={`bg-secondary-background flex flex-row items-center justify-between border-2 border-border rounded-base p-4 shadow-shadow ${className}`}>
+					<div className="flex items-center justify-between gap-4">
+						<div className="flex items-center gap-3 flex-1 min-w-0">
 							{token.iconUrl && (
 								<img
 									src={token.iconUrl}
 									alt={token.name || token.symbol}
-									className="w-6 h-6 rounded-full flex-shrink-0"
+									className="w-8 h-8 rounded-base flex-shrink-0"
 								/>
 							)}
 							<div className="flex-1 min-w-0">
-								<div className="flex items-center gap-2">
-									<h3 className="font-medium text-sm truncate">
-										{token.name || token.symbol}
-									</h3>
-									<Badge
-										variant="outline"
-										className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-500/30 text-yellow-300 text-xs px-1.5 py-0">
-										⭐ Promoted
-									</Badge>
-								</div>
-								<p className="text-xs text-white/50">{token.symbol}</p>
+								<h3 className="font-heading text-sm text-foreground truncate mb-1">
+									{token.name || token.symbol}
+								</h3>
+								<p className="text-xs text-foreground/60">{token.symbol}</p>
 							</div>
 						</div>
+
 						{displayPrice > 0 && (
 							<div className="text-right flex-shrink-0">
-								<Badge
-									variant="secondary"
-									className="bg-white/10 text-white border-white/20 text-xs h-5 px-2 mb-1">
+								<Badge variant="neutral" className="mb-2">
 									${displayPrice.toFixed(2)}
 								</Badge>
 								<div
-									className={`text-xs flex items-center justify-end gap-1 ${priceChangeColor}`}>
+									className={`text-xs flex items-center justify-end gap-1 ${priceChangeColor} font-base`}>
 									<PriceIcon className="w-3 h-3" />
 									{Math.abs(priceChange).toFixed(2)}%
 								</div>
@@ -73,23 +71,22 @@ export function TokenInfo({ tokenId, className, kolAddress }: TokenInfoProps) {
 
 					<div className="flex items-center gap-2">
 						<Button
-							variant="ghost"
+							variant="neutral"
 							size="sm"
-							className="flex items-center gap-1 text-xs h-7 px-2 bg-white/5 hover:bg-white/10 border border-white/10"
+							className="flex items-center gap-2"
 							onClick={() => setIsChartOpen(true)}>
-							<LineChart className="w-3 h-3" />
+							<LineChart className="w-4 h-4" />
 							Chart
 						</Button>
 						<Button
 							variant="default"
 							size="sm"
-							className="text-xs h-7 bg-white text-black hover:bg-white/90"
 							onClick={() => setIsSwapOpen(true)}>
 							Buy {token.symbol}
 						</Button>
 					</div>
-				</div>
-			</div>
+				</Card>
+			</motion.div>
 
 			<TokenChartDrawer
 				token={token}

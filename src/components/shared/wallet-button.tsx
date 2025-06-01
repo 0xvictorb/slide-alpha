@@ -24,7 +24,7 @@ import { useAtomValue } from 'jotai'
 import { walletAccountListAtom } from '@/atoms/account.atom'
 import { toast } from 'sonner'
 
-const NONCE_MESSAGE = 'Sign in to Slide Alpha'
+const NONCE_MESSAGE = 'Sign in to Swipe Fun'
 
 const WalletButton = () => {
 	const currentAccount = useCurrentAccount()
@@ -73,7 +73,7 @@ const WalletButton = () => {
 		return (
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<Button variant="outline" className="flex items-center gap-2">
+					<Button variant="default" className="flex items-center gap-2">
 						<Wallet className="w-4 h-4" />
 						{currentAccount.label || formatAddress(currentAccount.address)}
 					</Button>

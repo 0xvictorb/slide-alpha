@@ -1,9 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { useInView } from 'react-intersection-observer'
 import { VideoPlayer } from '@/components/shared/video-player'
-import { Volume2, VolumeX, Play } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { MediaPlayerInstance } from '@vidstack/react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import {
+	VolumeHighIcon,
+	VolumeMute02Icon,
+	PlayIcon
+} from '@hugeicons/core-free-icons'
 
 interface VideoDisplayProps {
 	videoUrl: string
@@ -71,7 +76,7 @@ export function VideoDisplay({
 
 	const handleMuteToggle = () => {
 		// Only allow unmuting if audio is enabled
-		if (audioEnabled && playerRef.current) {
+		if (playerRef.current) {
 			const newMuted = !isMuted
 			setIsMuted(newMuted)
 			playerRef.current.muted = newMuted
@@ -117,7 +122,7 @@ export function VideoDisplay({
 				'relative w-full h-full flex items-center justify-center bg-black',
 				className
 			)}>
-			<div className="relative w-full h-full max-w-[calc(100vh*9/16)] max-h-screen">
+			<div className="relative w-full h-full">
 				<VideoPlayer
 					ref={playerRef}
 					videoUrl={videoUrl}
@@ -134,20 +139,17 @@ export function VideoDisplay({
 						{/* Sound toggle button - Top right (hidden by default) */}
 						<button
 							onClick={handleMuteToggle}
-							disabled={!audioEnabled}
 							className={cn(
-								'absolute top-4 right-4 z-20 p-3 rounded-full transition-all duration-300',
+								'absolute top-4 right-4 z-20 p-2 rounded-full transition-all duration-300',
 								showSoundButton
 									? 'opacity-100 scale-100'
 									: 'opacity-0 scale-75 pointer-events-none',
-								audioEnabled
-									? 'bg-black/50 text-white hover:bg-black/70 hover:scale-110'
-									: 'bg-black/30 text-white/50 cursor-not-allowed'
+								'bg-black/50 text-white hover:bg-black/70 hover:scale-110'
 							)}>
-							{isMuted || !audioEnabled ? (
-								<VolumeX className="w-6 h-6" />
+							{isMuted ? (
+								<HugeiconsIcon icon={VolumeMute02Icon} className="w-6 h-6" />
 							) : (
-								<Volume2 className="w-6 h-6" />
+								<HugeiconsIcon icon={VolumeHighIcon} className="w-6 h-6" />
 							)}
 						</button>
 
@@ -157,50 +159,14 @@ export function VideoDisplay({
 							onClick={handlePlayPause}>
 							{/* Pause icon overlay - only show when paused */}
 							{!isPlaying && (
-								<div className="bg-black/60 rounded-full p-6 transition-all duration-200 hover:bg-black/80 hover:scale-110">
-									<Play
-										className="w-16 h-16 text-white ml-1"
-										fill="currentColor"
+								<div className="bg-black/60 rounded-full p-4 transition-all duration-200 hover:bg-black/80 hover:scale-110">
+									<HugeiconsIcon
+										icon={PlayIcon}
+										className="size-12 text-white"
 									/>
 								</div>
 							)}
 						</div>
-
-						{/* Audio disabled indicator */}
-						{!audioEnabled && (
-							<div className="absolute top-4 left-4 z-20 bg-black/50 rounded-lg px-3 py-1.5 text-white text-sm">
-								Audio disabled
-							</div>
-						)}
-					</>
-				)}
-
-				{/* Legacy controls when enhanced controls are off */}
-				{!showEnhancedControls && (
-					<>
-						{/* Legacy Mute/Unmute Button */}
-						<button
-							onClick={handleMuteToggle}
-							disabled={!audioEnabled}
-							className={cn(
-								'absolute bottom-4 right-4 z-10 p-2 rounded-full transition-colors',
-								audioEnabled
-									? 'bg-black/50 text-white hover:bg-black/70'
-									: 'bg-black/30 text-white/50 cursor-not-allowed'
-							)}>
-							{isMuted ? (
-								<VolumeX className="w-5 h-5" />
-							) : (
-								<Volume2 className="w-5 h-5" />
-							)}
-						</button>
-
-						{/* Audio disabled indicator */}
-						{!audioEnabled && (
-							<div className="absolute top-4 left-4 z-10 bg-black/50 rounded-lg px-2 py-1 text-white text-xs">
-								Audio disabled
-							</div>
-						)}
 					</>
 				)}
 			</div>

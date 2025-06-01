@@ -143,7 +143,7 @@ export function CommentList({
 			{hasMore && (
 				<div className="flex justify-center pt-4">
 					<Button
-						variant="outline"
+						variant="neutral"
 						size="sm"
 						onClick={onLoadMore}
 						disabled={isLoadingMore}
