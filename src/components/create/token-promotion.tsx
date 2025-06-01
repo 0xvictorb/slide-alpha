@@ -7,7 +7,6 @@ import {
 	FormDescription
 } from '@/components/ui/form'
 import { Switch } from '@/components/ui/switch'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
