@@ -61,7 +61,7 @@ function ProfileHeader({
 				</h1>
 				{isOwnProfile ? (
 					<div className="flex items-center gap-2">
-						<WalletButton />
+						<WalletButton needSignIn={false} />
 					</div>
 				) : (
 					<div className="w-10" /> // Spacer for center alignment

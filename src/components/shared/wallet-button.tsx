@@ -26,7 +26,11 @@ import { toast } from 'sonner'
 
 const NONCE_MESSAGE = 'Sign in to Swipe Fun'
 
-const WalletButton = () => {
+interface WalletButtonProps {
+	needSignIn?: boolean
+}
+
+const WalletButton = ({ needSignIn = true }: WalletButtonProps) => {
 	const currentAccount = useCurrentAccount()
 	const { mutate: disconnect } = useDisconnectWallet()
 	const { mutate: switchAccount } = useSwitchAccount()
@@ -41,9 +45,11 @@ const WalletButton = () => {
 			if (currentAccount?.address) {
 				try {
 					// Request signature
-					await signMessage({
-						message: new TextEncoder().encode(NONCE_MESSAGE)
-					})
+					if (needSignIn) {
+						await signMessage({
+							message: new TextEncoder().encode(NONCE_MESSAGE)
+						})
+					}
 
 					// Connect wallet in our database
 					const result = await connectWalletMutation({
@@ -66,7 +72,8 @@ const WalletButton = () => {
 		currentAccount?.address,
 		currentAccount?.label,
 		connectWalletMutation,
-		signMessage
+		signMessage,
+		needSignIn
 	])
 
 	if (currentAccount) {
