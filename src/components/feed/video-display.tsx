@@ -50,7 +50,45 @@ export function VideoDisplay({
 			setHasTrackedView(true)
 			onPlay?.()
 		}
-	}, [inView, hasTrackedView, onPlay])
+
+		// Show sound button when video starts playing
+		if (inView && showEnhancedControls) {
+			handleVideoPlayStart()
+		}
+	}, [inView, hasTrackedView, onPlay, showEnhancedControls])
+
+	// Handle sound button visibility when muted state changes
+	useEffect(() => {
+		if (!showEnhancedControls) return
+
+		if (isPlaying) {
+			if (isMuted) {
+				// Keep button visible when muted and playing
+				setShowSoundButton(true)
+				// Clear any existing timeout
+				if (hideButtonTimeoutRef.current) {
+					clearTimeout(hideButtonTimeoutRef.current)
+					hideButtonTimeoutRef.current = null
+				}
+			} else {
+				// Show briefly then fade out when unmuted
+				setShowSoundButton(true)
+
+				// Clear existing timeout
+				if (hideButtonTimeoutRef.current) {
+					clearTimeout(hideButtonTimeoutRef.current)
+				}
+
+				// Hide after 3 seconds if unmuted
+				hideButtonTimeoutRef.current = setTimeout(() => {
+					setShowSoundButton(false)
+				}, 3000)
+			}
+		} else {
+			// Hide when not playing
+			setShowSoundButton(false)
+		}
+	}, [isMuted, isPlaying, showEnhancedControls])
 
 	// Update muted state when audioEnabled changes
 	useEffect(() => {
@@ -74,6 +112,25 @@ export function VideoDisplay({
 		console.log('Video ready')
 	}
 
+	const handleVideoPlayStart = () => {
+		if (!showEnhancedControls) return
+
+		setShowSoundButton(true)
+
+		// If unmuted, hide after delay
+		if (!isMuted) {
+			// Clear existing timeout
+			if (hideButtonTimeoutRef.current) {
+				clearTimeout(hideButtonTimeoutRef.current)
+			}
+
+			hideButtonTimeoutRef.current = setTimeout(() => {
+				setShowSoundButton(false)
+			}, 3000)
+		}
+		// If muted, keep visible (no timeout)
+	}
+
 	const handleMuteToggle = () => {
 		// Only allow unmuting if audio is enabled
 		if (playerRef.current) {
@@ -81,8 +138,9 @@ export function VideoDisplay({
 			setIsMuted(newMuted)
 			playerRef.current.muted = newMuted
 		}
-		// Show button temporarily when toggled
-		showSoundButtonTemporarily()
+
+		// Don't call showSoundButtonTemporarily here anymore
+		// The useEffect will handle the visibility based on muted state
 	}
 
 	const handlePlayPause = () => {
@@ -95,24 +153,6 @@ export function VideoDisplay({
 			playerRef.current.play()
 			setIsPlaying(true)
 		}
-		// Show sound button temporarily when video is interacted with
-		showSoundButtonTemporarily()
-	}
-
-	const showSoundButtonTemporarily = () => {
-		if (!showEnhancedControls) return
-
-		setShowSoundButton(true)
-
-		// Clear existing timeout
-		if (hideButtonTimeoutRef.current) {
-			clearTimeout(hideButtonTimeoutRef.current)
-		}
-
-		// Hide after 3 seconds
-		hideButtonTimeoutRef.current = setTimeout(() => {
-			setShowSoundButton(false)
-		}, 3000)
 	}
 
 	return (

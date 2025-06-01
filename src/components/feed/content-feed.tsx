@@ -408,6 +408,9 @@ export function ContentFeed({ className }: ContentFeedProps) {
 					{/* Content overlay - only show for active content */}
 					{isActive && (
 						<>
+							{/* Dark gradient overlay at bottom for better text readability */}
+							<div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none z-5" />
+
 							{/* Token information at the top */}
 							{content.promotedTokenId && (
 								<div className="absolute bottom-5 left-4 right-4 z-10">
@@ -448,16 +451,16 @@ export function ContentFeed({ className }: ContentFeedProps) {
 								</div>
 
 								{/* Title */}
-								<div className="mb-2">
-									<h3 className="font-semibold text-lg text-white leading-tight">
+								<div className="mb-1">
+									<h3 className="font-semibold text-base text-white leading-tight">
 										{content.title}
 									</h3>
 								</div>
 
 								{/* Description */}
 								{content.description && (
-									<div className="mb-2">
-										<p className="text-sm text-white/90 leading-relaxed">
+									<div className="mb-1">
+										<p className="text-sm text-white/80 leading-relaxed">
 											{content.description}
 										</p>
 									</div>
@@ -468,8 +471,10 @@ export function ContentFeed({ className }: ContentFeedProps) {
 									<Hashtags
 										hashtags={content.hashtags}
 										onHashtagClick={(hashtag) => {
-											// TODO: Navigate to hashtag search
-											console.log('Search hashtag:', hashtag)
+											navigate({
+												to: '/search',
+												search: { hashtag, q: '' }
+											})
 										}}
 									/>
 								</div>

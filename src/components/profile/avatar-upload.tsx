@@ -76,7 +76,7 @@ export function AvatarUpload({
 			URL.revokeObjectURL(objectUrl)
 			setPreviewUrl(null)
 
-			toast.success('Profile picture updated successfully!')
+			toast.success('Profile picture updated!')
 			onUploadComplete?.(result.media_url)
 		} catch (error) {
 			console.error('Avatar upload failed:', error)
@@ -116,15 +116,15 @@ export function AvatarUpload({
 	const displayUrl = previewUrl || currentAvatarUrl
 
 	return (
-		<div className={cn('relative', className)}>
+		<div className={cn('relative flex flex-col items-center', className)}>
 			<div className="relative group">
 				<Avatar
 					className={cn(
 						sizeClasses[size],
-						'border-4 border-white shadow-lg cursor-pointer'
+						'border-4 border-white shadow-lg cursor-pointer relative'
 					)}>
 					<AvatarImage src={displayUrl} alt={userName} />
-					<AvatarFallback className="text-lg bg-white text-primary">
+					<AvatarFallback className="text-lg bg-background text-main">
 						{userName.charAt(0).toUpperCase()}
 					</AvatarFallback>
 				</Avatar>
@@ -148,12 +148,25 @@ export function AvatarUpload({
 					<Button
 						size="sm"
 						variant="destructive"
-						className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+						className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 z-10"
 						onClick={cancelUpload}>
-						<X className="h-4 w-4" />
+						<X className="h-3 w-3" />
 					</Button>
 				)}
 			</div>
+
+			{/* Upload button for large size */}
+			{size === 'lg' && (
+				<Button
+					variant="secondary"
+					size="sm"
+					onClick={handleAvatarClick}
+					disabled={isUploading}
+					className="mt-2">
+					<Upload className="h-3 w-3 mr-1" />
+					{isUploading ? 'Uploading...' : 'Change Photo'}
+				</Button>
+			)}
 
 			{/* Hidden file input */}
 			<input
@@ -164,21 +177,6 @@ export function AvatarUpload({
 				className="hidden"
 				disabled={isUploading}
 			/>
-
-			{/* Upload instructions */}
-			{size === 'lg' && (
-				<div className="mt-2 text-center">
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={handleAvatarClick}
-						disabled={isUploading}
-						className="text-xs text-muted-foreground">
-						<Upload className="h-3 w-3 mr-1" />
-						{isUploading ? 'Uploading...' : 'Change Photo'}
-					</Button>
-				</div>
-			)}
 		</div>
 	)
 }

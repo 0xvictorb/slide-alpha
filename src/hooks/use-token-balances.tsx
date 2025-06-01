@@ -6,6 +6,7 @@ import { useTokens } from './use-tokens'
 import { useTokensFiatPrice } from './use-tokens-fiat-price'
 import { getCoinMetadata } from '@/lib/sui'
 import type { TokenBalance } from '@/types/token'
+import { SUI_ADDRESS, SUI_FULL_ADDRESS } from '@/constants/common'
 
 async function getAllTokenBalances(client: SuiClient, address: string) {
 	const allCoins = await client.getAllCoins({
@@ -19,7 +20,7 @@ async function getAllTokenBalances(client: SuiClient, address: string) {
 	})
 
 	return Array.from(balanceMap.entries()).map(([coinType, balance]) => ({
-		coinType: coinType.split('::').pop() || coinType,
+		coinType: coinType === SUI_ADDRESS ? SUI_FULL_ADDRESS : coinType,
 		balance: balance.toString()
 	}))
 }
@@ -51,13 +52,22 @@ export function useTokenBalances() {
 
 	const tokensWithBalances = tokens
 		?.map((token, index) => {
-			const balance = balancesQuery.data?.find((b) => b.coinType === token.type)
+			const isSUI =
+				token.type === SUI_FULL_ADDRESS || token.type === SUI_ADDRESS
+
+			const balance = balancesQuery.data?.find(
+				(b) =>
+					b.coinType === token.type ||
+					(isSUI &&
+						(b.coinType === SUI_FULL_ADDRESS || b.coinType === SUI_ADDRESS))
+			)
 			const formattedBalance =
 				fromDecimals(balance?.balance || '0', token?.decimals || 0) || '0'
-			const usdPrice = tokenPrices?.[index]?.price
-			const usdValue = usdPrice
-				? Number(formattedBalance) * Number(usdPrice)
-				: undefined
+			const usdPrice = tokenPrices?.[token.symbol]?.price || 0
+			const usdValue =
+				usdPrice && Number(formattedBalance) > 0
+					? Number(formattedBalance) * Number(usdPrice)
+					: 0
 
 			return {
 				...token,
@@ -65,18 +75,18 @@ export function useTokenBalances() {
 				iconUrl: metadataQueries[index]?.data?.iconUrl || token.iconUrl,
 				balance: balance?.balance || '0',
 				formattedBalance,
-				usdValue: usdValue || 0,
-				usdPrice: usdPrice || 0
+				usdValue,
+				usdPrice
 			} satisfies TokenBalance
 		})
 		?.sort((a, b) => {
 			// Verified SUI first
-			const isVerifiedSuiA = a.symbol === 'SUI' && (a.verified || false)
-			const isVerifiedSuiB = b.symbol === 'SUI' && (b.verified || false)
+			const isSUIA = a.type === SUI_FULL_ADDRESS || a.type === SUI_ADDRESS
+			const isSUIB = b.type === SUI_FULL_ADDRESS || b.type === SUI_ADDRESS
 
-			if (isVerifiedSuiA && !isVerifiedSuiB) return -1
-			if (!isVerifiedSuiA && isVerifiedSuiB) return 1
-			if (isVerifiedSuiA && isVerifiedSuiB) return 0
+			if (isSUIA && !isSUIB) return -1
+			if (!isSUIA && isSUIB) return 1
+			if (isSUIA && isSUIB) return 0
 
 			// Then tokens with balances (non-zero)
 			const hasBalanceA = Number(a.formattedBalance) > 0

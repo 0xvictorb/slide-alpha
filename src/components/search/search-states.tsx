@@ -1,5 +1,9 @@
 import { HugeiconsIcon } from '@hugeicons/react'
-import { Search01Icon, Loading02Icon } from '@hugeicons/core-free-icons'
+import {
+	Search01Icon,
+	Loading02Icon,
+	SearchVisualIcon
+} from '@hugeicons/core-free-icons'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 
@@ -48,16 +52,16 @@ export function DiscoveryState({ onHashtagClick }: DiscoveryStateProps) {
 	const popularTags = ['tech', 'art', 'music', 'gaming', 'food']
 
 	return (
-		<Card className="border-2 border-border">
-			<CardContent className="text-center py-20">
+		<Card>
+			<CardContent className="text-center py-10">
 				<HugeiconsIcon
-					icon={Search01Icon}
-					className="w-16 h-16 text-muted-foreground mx-auto mb-4"
+					icon={SearchVisualIcon}
+					className="w-16 h-16 text-secondary mx-auto mb-4"
 				/>
-				<h2 className="text-xl font-semibold text-foreground mb-2">
+				<h2 className="text-lg font-semibold text-foreground mb-2">
 					Discover Content
 				</h2>
-				<p className="text-muted-foreground mb-6">
+				<p className="text-foreground/60 text-sm mb-4">
 					Search for videos, images, or hashtags to explore amazing content
 				</p>
 				<div className="flex flex-wrap justify-center gap-2">

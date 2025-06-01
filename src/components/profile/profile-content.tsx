@@ -2,12 +2,21 @@ import { useCurrentAccount } from '@mysten/dapp-kit'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { Button } from '@/components/ui/button'
-import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { formatAddress } from '@mysten/sui/utils'
-import { UserPlus, Play, UserCheck, Camera, Edit, Check } from 'lucide-react'
+import {
+	UserPlus,
+	Play,
+	UserCheck,
+	Camera,
+	Edit,
+	Share,
+	MessageCircle,
+	Copy
+} from 'lucide-react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { ArrowLeft01Icon } from '@hugeicons/core-free-icons'
 import { toast } from 'sonner'
@@ -120,6 +129,42 @@ export function ProfileContent({ profileAddress }: ProfileContentProps) {
 		}
 	}
 
+	const handleShareProfile = async () => {
+		if (!user) return
+
+		try {
+			if (navigator.share) {
+				await navigator.share({
+					title: `${user.name}'s Profile`,
+					text: `Check out ${user.name}'s profile`,
+					url: window.location.href
+				})
+			} else {
+				// Fallback to clipboard
+				await navigator.clipboard.writeText(window.location.href)
+				toast.success('Profile link copied to clipboard!')
+			}
+		} catch (error) {
+			toast.error('Failed to share profile')
+			console.error(error)
+		}
+	}
+
+	const handleChatClick = () => {
+		// TODO: Implement chat functionality
+		toast.info('Chat feature coming soon!')
+	}
+
+	const handleCopyAddress = async () => {
+		try {
+			await navigator.clipboard.writeText(profileAddress)
+			toast.success('Address copied to clipboard!')
+		} catch (error) {
+			toast.error('Failed to copy address')
+			console.error(error)
+		}
+	}
+
 	if (!user) {
 		return <ProfileSkeleton />
 	}
@@ -160,7 +205,7 @@ export function ProfileContent({ profileAddress }: ProfileContentProps) {
 										<div className="relative group cursor-pointer">
 											<Avatar className="h-24 w-24 border-4 border-white shadow-lg">
 												<AvatarImage src={user.avatarUrl} />
-												<AvatarFallback className="text-2xl bg-white text-primary">
+												<AvatarFallback className="text-2xl bg-white text-main">
 													{user.name.charAt(0).toUpperCase()}
 												</AvatarFallback>
 											</Avatar>
@@ -172,7 +217,7 @@ export function ProfileContent({ profileAddress }: ProfileContentProps) {
 								) : (
 									<Avatar className="h-24 w-24 border-4 border-white shadow-lg">
 										<AvatarImage src={user.avatarUrl} />
-										<AvatarFallback className="text-2xl bg-white text-primary">
+										<AvatarFallback className="text-2xl bg-white text-main">
 											{user.name.charAt(0).toUpperCase()}
 										</AvatarFallback>
 									</Avatar>
@@ -183,18 +228,24 @@ export function ProfileContent({ profileAddress }: ProfileContentProps) {
 							<div className="text-center mb-6">
 								{/* Name */}
 								<div className="flex items-center justify-center gap-2 mb-2">
-									<h2 className="text-xl font-bold flex items-center gap-2">
+									<h2 className="text-xl font-semibold flex items-center gap-2">
 										@{user.name}
-										<Badge
-											variant="default"
-											className="bg-blue-500 hover:bg-blue-600">
-											<Check className="h-3 w-3" />
-										</Badge>
 									</h2>
 								</div>
 
+								{/* Wallet Address */}
+								<div className="mb-4">
+									<div
+										className="text-xs text-foreground/50 font-mono bg-secondary-background px-3 py-1 rounded-full inline-flex items-center gap-1 cursor-pointer hover:bg-secondary-background/80 hover:text-foreground/70 transition-colors"
+										onClick={handleCopyAddress}
+										title="Click to copy address">
+										<span>{formatAddress(profileAddress)}</span>
+										<Copy className="h-3 w-3" />
+									</div>
+								</div>
+
 								{/* Join Date */}
-								<p className="text-sm text-muted-foreground mb-4">
+								<p className="text-xs text-foreground/50 mb-4">
 									joined on{' '}
 									{new Date(user._creationTime).toLocaleDateString('en-US', {
 										month: '2-digit',
@@ -203,69 +254,88 @@ export function ProfileContent({ profileAddress }: ProfileContentProps) {
 									})}
 								</p>
 
-								{/* Stats */}
-								<div className="flex justify-center gap-8 mb-6">
-									<div className="text-center">
-										<p className="text-2xl font-bold">{user.followingCount}</p>
-										<p className="text-sm text-muted-foreground">Following</p>
-									</div>
-									<div className="text-center">
-										<p className="text-2xl font-bold">{user.followerCount}</p>
-										<p className="text-sm text-muted-foreground">Followers</p>
-									</div>
-								</div>
-
 								{/* Action Buttons */}
 								{isOwnProfile ? (
 									<div className="flex gap-3 justify-center mb-6">
 										<ProfileEditDrawer user={user}>
-											<Button variant="secondary">
+											<Button variant="secondary" className="px-6">
 												<Edit className="h-4 w-4 mr-2" />
 												Edit Profile
 											</Button>
 										</ProfileEditDrawer>
+										<Button
+											variant="default"
+											className="px-6"
+											onClick={handleShareProfile}>
+											<Share className="h-4 w-4 mr-2" />
+											Share Profile
+										</Button>
 									</div>
 								) : (
 									account?.address && (
 										<div className="flex gap-3 justify-center mb-6">
 											<Button
 												onClick={handleToggleFollow}
-												className={`px-8 ${
+												variant={isFollowing ? 'secondary' : 'default'}
+												className={`px-6 ${
 													isFollowing
-														? 'bg-green-500 hover:bg-green-600 text-white'
-														: 'bg-green-500 hover:bg-green-600 text-white'
+														? 'bg-secondary-background hover:bg-secondary-background/80 text-foreground/70 border border-border'
+														: 'bg-blue-500 hover:bg-blue-600 text-white'
 												}`}>
-												{isFollowing ? 'Following' : 'Follow'}
-												{!isFollowing && <UserPlus className="h-4 w-4 ml-2" />}
+												{isFollowing ? (
+													<>
+														<UserCheck className="h-4 w-4 mr-2" />
+														Following
+													</>
+												) : (
+													<>
+														<UserPlus className="h-4 w-4 mr-2" />
+														Follow
+													</>
+												)}
 											</Button>
 											<Button
-												variant="secondary"
-												className="px-8 bg-purple-500 hover:bg-purple-600 text-white border-purple-500">
-												Message
-												<HugeiconsIcon
-													icon={ArrowLeft01Icon}
-													size={16}
-													className="ml-2 rotate-180"
-												/>
+												variant="ghost"
+												className="px-6"
+												onClick={handleChatClick}>
+												<MessageCircle className="h-4 w-4 mr-2" />
+												Chat
 											</Button>
 										</div>
 									)
 								)}
 
+								{/* Stats */}
+								<div className="flex justify-center gap-4 mb-6">
+									<Card className="p-2 min-w-[100px]">
+										<div className="text-center">
+											<p className="text-2xl font-bold text-foreground">
+												{user.followingCount}
+											</p>
+											<p className="text-sm text-foreground/60 font-medium">
+												Following
+											</p>
+										</div>
+									</Card>
+									<Card className="p-2 min-w-[100px]">
+										<div className="text-center">
+											<p className="text-2xl font-bold text-foreground">
+												{user.followerCount}
+											</p>
+											<p className="text-sm text-foreground/60 font-medium">
+												Followers
+											</p>
+										</div>
+									</Card>
+								</div>
+
 								{/* Bio */}
 								<div className="text-center">
-									<p className="text-sm text-muted-foreground max-w-md mx-auto">
+									<p className="text-sm text-foreground/60 max-w-md mx-auto">
 										{user.bio ||
 											(isOwnProfile
 												? 'Add a bio to tell people about yourself...'
 												: 'No bio available')}
-									</p>
-								</div>
-
-								{/* Wallet Address */}
-								<div className="mt-4 text-center">
-									<p className="text-xs text-muted-foreground font-mono bg-muted px-3 py-1 rounded-full inline-block">
-										{formatAddress(profileAddress)}
 									</p>
 								</div>
 							</div>

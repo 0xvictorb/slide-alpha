@@ -1,6 +1,7 @@
 import { useQuery as useConvexQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import type { TokenData } from '../types/token'
+import { SUI_FULL_ADDRESS, SUI_ADDRESS } from '@/constants/common'
 
 export function useTokens() {
 	const tokens = useConvexQuery(api.tokens.getTokens)
@@ -23,8 +24,11 @@ export function useTokens() {
 	const sortedTokens =
 		tokens?.sort((a: TokenData, b: TokenData) => {
 			// SUI always comes first
-			if (a.symbol.toLowerCase() === 'sui') return -1
-			if (b.symbol.toLowerCase() === 'sui') return 1
+			const isSUIA = a.type === SUI_FULL_ADDRESS || a.type === SUI_ADDRESS
+			const isSUIB = b.type === SUI_FULL_ADDRESS || b.type === SUI_ADDRESS
+
+			if (isSUIA && !isSUIB) return -1
+			if (!isSUIA && isSUIB) return 1
 
 			// Then sort by verified status (verified first)
 			if (a.verified && !b.verified) return -1

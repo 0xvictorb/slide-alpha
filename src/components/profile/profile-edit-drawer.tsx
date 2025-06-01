@@ -5,7 +5,6 @@ import { api } from '@convex/_generated/api'
 import {
 	Drawer,
 	DrawerContent,
-	DrawerDescription,
 	DrawerHeader,
 	DrawerTitle,
 	DrawerTrigger,
@@ -16,6 +15,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Card, CardContent } from '@/components/ui/card'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Save, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { AvatarUpload } from './avatar-upload'
@@ -63,22 +64,16 @@ export function ProfileEditDrawer({ user, children }: ProfileEditDrawerProps) {
 	return (
 		<Drawer open={isOpen} onOpenChange={setIsOpen}>
 			<DrawerTrigger asChild>{children}</DrawerTrigger>
-			<DrawerContent className="max-h-[90vh]">
-				<DrawerHeader className="text-center">
+			<DrawerContent className="mx-auto max-w-[500px] h-[85vh]">
+				<DrawerHeader className="flex-shrink-0 border-b border-border/10 pb-4">
 					<DrawerTitle>Edit Profile</DrawerTitle>
-					<DrawerDescription>
-						Update your profile information and avatar
-					</DrawerDescription>
 				</DrawerHeader>
 
-				<div className="flex-1 overflow-y-auto px-4 pb-4">
-					<div className="max-w-md mx-auto space-y-6">
+				<ScrollArea className="flex-1">
+					<div className="px-4 py-6 space-y-6">
 						{/* Avatar Section */}
-						<div className="text-center">
-							<Label className="text-sm font-medium mb-2 block">
-								Profile Picture
-							</Label>
-							<div className="flex justify-center">
+						<div className="flex flex-col items-center space-y-4 py-4">
+							<div className="text-center space-y-3">
 								<AvatarUpload
 									currentAvatarUrl={user?.avatarUrl}
 									userName={user?.name}
@@ -88,66 +83,79 @@ export function ProfileEditDrawer({ user, children }: ProfileEditDrawerProps) {
 									}}
 								/>
 							</div>
-							<p className="text-xs text-muted-foreground mt-2">
-								Click to upload a new profile picture
-							</p>
 						</div>
 
-						{/* Name Section */}
-						<div className="space-y-2">
-							<Label htmlFor="name" className="text-sm font-medium">
-								Display Name
-							</Label>
-							<Input
-								id="name"
-								value={name}
-								onChange={(e) => setName(e.target.value)}
-								placeholder="Enter your display name"
-								maxLength={50}
-							/>
-							<p className="text-xs text-muted-foreground">
-								{name.length}/50 characters
-							</p>
-						</div>
+						{/* Profile Information */}
+						<Card className="border-0 bg-secondary-background/30 shadow-sm">
+							<CardContent className="p-6 space-y-6">
+								{/* Name Section */}
+								<div className="space-y-3">
+									<Label htmlFor="name" className="block">
+										Display Name
+									</Label>
+									<Input
+										id="name"
+										value={name}
+										onChange={(e) => setName(e.target.value)}
+										placeholder="Enter your display name"
+										maxLength={50}
+									/>
+									<div className="flex justify-between items-center">
+										<p className="text-xs text-foreground/60">
+											This is how others will see your name
+										</p>
+										<p className="text-xs text-foreground/50 font-medium">
+											{name.length}/50
+										</p>
+									</div>
+								</div>
 
-						{/* Bio Section */}
-						<div className="space-y-2">
-							<Label htmlFor="bio" className="text-sm font-medium">
-								Bio
-							</Label>
-							<Textarea
-								id="bio"
-								value={bio}
-								onChange={(e) => setBio(e.target.value)}
-								placeholder="Tell people about yourself..."
-								rows={4}
-								maxLength={200}
-								className="resize-none"
-							/>
-							<p className="text-xs text-muted-foreground">
-								{bio.length}/200 characters
-							</p>
-						</div>
+								{/* Bio Section */}
+								<div className="space-y-3">
+									<Label htmlFor="bio" className="block">
+										Bio
+									</Label>
+									<Textarea
+										id="bio"
+										value={bio}
+										onChange={(e) => setBio(e.target.value)}
+										placeholder="Share something about yourself..."
+										rows={4}
+										maxLength={200}
+									/>
+									<div className="flex justify-between items-center">
+										<p className="text-xs text-foreground/60">
+											Tell others what makes you unique
+										</p>
+										<p className="text-xs text-foreground/50 font-medium">
+											{bio.length}/200
+										</p>
+									</div>
+								</div>
+							</CardContent>
+						</Card>
 					</div>
-				</div>
+				</ScrollArea>
 
-				<DrawerFooter className="flex-row gap-2">
-					<DrawerClose asChild>
+				<DrawerFooter className="border-t border-border/10 flex-shrink-0 p-4 bg-background/95">
+					<div className="flex gap-3 w-full">
+						<DrawerClose asChild>
+							<Button
+								variant="neutral"
+								onClick={handleCancel}
+								className="flex-1">
+								<X className="h-4 w-4 mr-2" />
+								Cancel
+							</Button>
+						</DrawerClose>
 						<Button
-							variant="secondary"
-							onClick={handleCancel}
+							onClick={handleSave}
+							disabled={isLoading || !name.trim()}
 							className="flex-1">
-							<X className="h-4 w-4 mr-2" />
-							Cancel
+							<Save className="h-4 w-4 mr-2" />
+							{isLoading ? 'Saving...' : 'Save Changes'}
 						</Button>
-					</DrawerClose>
-					<Button
-						onClick={handleSave}
-						disabled={isLoading || !name.trim()}
-						className="flex-1">
-						<Save className="h-4 w-4 mr-2" />
-						{isLoading ? 'Saving...' : 'Save Changes'}
-					</Button>
+					</div>
 				</DrawerFooter>
 			</DrawerContent>
 		</Drawer>

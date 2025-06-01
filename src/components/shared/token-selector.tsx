@@ -16,7 +16,10 @@ import { useSuiClient } from '@mysten/dapp-kit'
 import { getCoinMetadata } from '@/lib/sui'
 import type { TokenData } from '@/types/token'
 import InfiniteScroll from '@/components/ui/infinite-scroll'
-import { OptimizedImage } from './optimized-image'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { CardContent } from '@/components/ui/card'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { CheckmarkBadge02Icon } from '@hugeicons/core-free-icons'
 
 interface TokenItemProps {
 	token: TokenData
@@ -25,43 +28,50 @@ interface TokenItemProps {
 }
 
 function TokenItem({ token, onSelect, selected }: TokenItemProps) {
+	const handleSelect = () => {
+		console.log('selecting token', token)
+		onSelect(token)
+	}
+
 	return (
 		<Button
 			variant="neutral"
 			className={`w-full h-auto justify-start gap-4 px-4 py-3 transition-all duration-200 hover:bg-accent/50 ${
 				selected ? 'bg-accent' : ''
 			}`}
-			onClick={() => onSelect(token)}>
-			<div className="relative h-10 w-10 shrink-0">
+			onClick={handleSelect}>
+			<Avatar className="size-10 ring-2 ring-border">
 				{token.iconUrl ? (
-					<img
-						src={token.iconUrl}
-						alt={token.name}
-						className="h-full w-full rounded-full object-cover ring-2 ring-border"
-					/>
+					<AvatarImage src={token.iconUrl} alt={token.name} />
 				) : (
-					<div className="h-full w-full rounded-full bg-muted flex items-center justify-center">
-						<span className="text-lg font-semibold text-muted-foreground">
-							{token.symbol[0]}
-						</span>
-					</div>
+					<AvatarFallback className="bg-primary/10 text-primary font-bold">
+						{token.symbol[0]}
+					</AvatarFallback>
 				)}
-				{token.verified && (
-					<div className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-primary flex items-center justify-center">
-						<Verified className="h-4 w-4 text-white" />
-					</div>
-				)}
-			</div>
+			</Avatar>
 			<div className="flex flex-col items-start flex-1 gap-0.5">
 				<div className="flex items-center gap-2">
-					<span className="font-semibold">{token.symbol}</span>
+					<span className="font-semibold flex items-center gap-2">
+						{token.symbol}{' '}
+						{token.verified && (
+							<div className="rounded-full bg-primary flex items-center justify-center">
+								<HugeiconsIcon
+									icon={CheckmarkBadge02Icon}
+									className="text-blue-500"
+									size={16}
+									strokeWidth={2}
+								/>
+							</div>
+						)}
+					</span>
+
 					{selected && (
 						<span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
 							Selected
 						</span>
 					)}
 				</div>
-				<span className="text-sm text-muted-foreground truncate max-w-[200px]">
+				<span className="text-sm text-neutral-500 font-normal truncate max-w-[200px]">
 					{token.name}
 				</span>
 			</div>
@@ -133,7 +143,7 @@ export function TokenSelector({
 			})
 		},
 		getNextPageParam: (lastPage) => lastPage.nextPage,
-		enabled: open // Only enabled when drawer is open
+		enabled: open
 	})
 
 	const tokens = paginatedData?.pages.flatMap((page) => page.items) ?? []
@@ -143,10 +153,8 @@ export function TokenSelector({
 		setSearch(value)
 		setError(null)
 
-		// If empty search, just show all tokens
 		if (!value.trim()) return
 
-		// First check if we have matching tokens
 		const searchLower = value.toLowerCase()
 		const hasMatches = allTokens.some(
 			(token) =>
@@ -155,10 +163,8 @@ export function TokenSelector({
 				token.type.toLowerCase().includes(searchLower)
 		)
 
-		// If we have matches, no need to try import
 		if (hasMatches) return
 
-		// If looks like a token address, try to import
 		if (value.includes('::') && !allTokens.some((t) => t.type === value)) {
 			setIsSearching(true)
 			try {
@@ -173,7 +179,6 @@ export function TokenSelector({
 						verified: false,
 						lastUpdated: Date.now()
 					}
-					// Add to imported tokens if not already present
 					if (!importedTokens.some((t) => t.type === value)) {
 						const updatedImportedTokens = [...importedTokens, newToken]
 						setImportedTokens(updatedImportedTokens)
@@ -181,7 +186,6 @@ export function TokenSelector({
 							'importedTokens',
 							JSON.stringify(updatedImportedTokens)
 						)
-						// Clear search to show the newly added token
 						setSearch('')
 					}
 				} else {
@@ -196,63 +200,57 @@ export function TokenSelector({
 		}
 	}
 
-	// Handle token selection
-	const handleSelect = (token: TokenData) => {
-		onSelect(token)
-		onOpenChange(false)
-		setSearch('') // Clear search when closing
-	}
-
 	return (
 		<Drawer open={open} onOpenChange={onOpenChange}>
-			<DrawerContent className="h-[85vh] flex flex-col">
-				<DrawerHeader className="border-b shrink-0">
-					<DrawerTitle className="text-xl font-semibold">
-						Select a Token
-					</DrawerTitle>
-					{selectedToken ? (
-						<div className="flex items-center gap-2 mt-2">
-							<span className="text-sm text-muted-foreground">
-								Currently selected:
-							</span>
-							<div className="flex items-center gap-2 px-3 py-1.5 bg-accent rounded-lg">
-								{selectedToken.iconUrl ? (
-									<OptimizedImage
-										src={selectedToken.iconUrl}
-										alt={selectedToken.name}
-										className="h-5 w-5 rounded-full"
-									/>
-								) : (
-									<div className="h-5 w-5 rounded-full bg-muted flex items-center justify-center">
-										<span className="text-sm font-semibold text-muted-foreground">
-											{selectedToken.symbol[0]}
-										</span>
-									</div>
-								)}
-								<span className="font-medium">{selectedToken.symbol}</span>
+			<DrawerContent className="h-[85vh] flex flex-col max-w-[780px] mx-auto">
+				<DrawerHeader className="border-b border-border/20 backdrop-blur-sm px-6 py-4">
+					<DrawerTitle>
+						<h2 className="text-lg text-center font-bold mb-4">
+							Select a Token
+						</h2>
+						{selectedToken ? (
+							<div className="flex items-center gap-2">
+								<span className="text-sm text-muted-foreground">
+									Currently selected:
+								</span>
+								<div className="flex items-center gap-2 px-3 py-1.5 bg-accent rounded-lg">
+									<Avatar className="size-5">
+										{selectedToken.iconUrl ? (
+											<AvatarImage
+												src={selectedToken.iconUrl}
+												alt={selectedToken.name}
+											/>
+										) : (
+											<AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
+												{selectedToken.symbol[0]}
+											</AvatarFallback>
+										)}
+									</Avatar>
+									<span className="font-medium">{selectedToken.symbol}</span>
+								</div>
 							</div>
-						</div>
-					) : (
-						<DrawerDescription className="mt-2">
-							Search by name or paste token address to import
-						</DrawerDescription>
-					)}
+						) : (
+							<DrawerDescription className="mt-2">
+								Search by name or paste token address to import
+							</DrawerDescription>
+						)}
+					</DrawerTitle>
 				</DrawerHeader>
 
-				<div className="border-b shrink-0 p-4">
+				<CardContent className="p-0 mx-6 mt-4 mb-2">
 					<div className="relative">
 						<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 						<Input
 							placeholder="Search name or paste address"
 							value={search}
 							onChange={(e) => handleSearchChange(e.target.value)}
-							className="pl-9 bg-muted"
+							className="pl-9 bg-white"
 						/>
 					</div>
-				</div>
+				</CardContent>
 
-				<ScrollArea className="flex-1 overflow-y-auto">
-					<div className="p-2">
+				<ScrollArea className="flex-1">
+					<div className="py-4 px-6">
 						<div className="space-y-1">
 							{isSearching ? (
 								<div className="py-12 text-center">
@@ -285,33 +283,19 @@ export function TokenSelector({
 							) : tokens.length === 0 ? (
 								<div className="py-12 text-center">
 									<div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-										<svg
-											width="24"
-											height="24"
-											viewBox="0 0 24 24"
-											fill="none"
-											xmlns="http://www.w3.org/2000/svg"
-											className="text-muted-foreground">
-											<path
-												d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
-												stroke="currentColor"
-												strokeWidth="2"
-												strokeLinecap="round"
-												strokeLinejoin="round"
-											/>
-										</svg>
+										<Search className="h-6 w-6 text-muted-foreground" />
 									</div>
 									<p className="text-sm text-muted-foreground">
 										No tokens found
 									</p>
 								</div>
 							) : (
-								<div className="flex flex-col gap-2">
+								<div className="flex flex-col gap-4">
 									{tokens.map((token) => (
 										<TokenItem
 											key={token.type}
 											token={token}
-											onSelect={handleSelect}
+											onSelect={onSelect}
 											selected={selectedToken?.type === token.type}
 										/>
 									))}

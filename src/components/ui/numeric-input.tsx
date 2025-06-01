@@ -80,12 +80,13 @@ export const NumericInput = React.forwardRef<HTMLInputElement, Props>(
 					decimalScale={decimalScale}
 					allowNegative={false}
 					className={cn(
-						'rounded-none bg-transparent font-medium text-[30px] text-white/90 placeholder:text-white/60',
-						'focus-visible:!shadow-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 focus-visible:ring-transparent',
-						'w-full',
-						'truncate',
-						className,
-						isError && 'text-pink-100'
+						'flex h-10 w-full items-center rounded-base border-2 border-border bg-main px-3 py-2',
+						'text-sm font-base text-main-foreground placeholder:text-foreground/50',
+						'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2',
+						'focus:outline-hidden focus:ring-2 focus:ring-black focus:ring-offset-2',
+						'disabled:cursor-not-allowed disabled:opacity-50',
+						isError && 'border-pink-100 text-pink-100',
+						className
 					)}
 					{...props}
 					onChange={onInputChange ?? noop}

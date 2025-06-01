@@ -374,6 +374,9 @@ export function UserContentFeed({
 					{/* Content overlay - only show for active content */}
 					{isActive && (
 						<>
+							{/* Dark gradient overlay at bottom for better text readability */}
+							<div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none z-5" />
+
 							{/* Back button at the top */}
 							<div className="absolute top-4 left-4 z-20">
 								<Button
