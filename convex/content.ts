@@ -689,7 +689,8 @@ export const searchContent = query({
 				promotedTokenId: v.optional(v.string()),
 				authorWalletAddress: v.optional(v.string()),
 				authorName: v.optional(v.string()),
-				authorAvatarUrl: v.optional(v.string())
+				authorAvatarUrl: v.optional(v.string()),
+				isOnChain: v.optional(v.boolean())
 			})
 		),
 		isDone: v.boolean(),
