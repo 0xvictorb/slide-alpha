@@ -1,6 +1,5 @@
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
-import { Doc } from './_generated/dataModel'
 
 /**
  * Handles wallet connection and user creation/retrieval

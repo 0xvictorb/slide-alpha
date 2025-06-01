@@ -70,6 +70,7 @@ function CreatePage() {
 
 			// Status
 			isPremium: false,
+			isOnChain: false,
 
 			// Token promotion
 			isPromotingToken: false,
@@ -100,7 +101,8 @@ function CreatePage() {
 			await createContent({
 				...values,
 				authorWalletAddress: account.address,
-				hashtags: values.hashtags || []
+				hashtags: values.hashtags || [],
+				isOnChain: values.isOnChain || false
 			})
 
 			toast.success('Content created successfully')

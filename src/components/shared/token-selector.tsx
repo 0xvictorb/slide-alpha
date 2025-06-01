@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, Loader2, Verified } from 'lucide-react'
+import { Search, Loader2 } from 'lucide-react'
 import { useTokens } from '@/hooks/use-tokens'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import {

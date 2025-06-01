@@ -44,7 +44,7 @@ export const createContentSchema = z
 		promotedTokenId: z.string().optional(),
 
 		// On-chain status
-		isOnChain: z.boolean().default(false)
+		isOnChain: z.boolean().default(false).optional()
 	})
 	.refine(
 		(data) => {
