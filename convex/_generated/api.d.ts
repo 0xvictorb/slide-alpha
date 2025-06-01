@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as chat from "../chat.js";
 import type * as cloudinary from "../cloudinary.js";
 import type * as content from "../content.js";
 import type * as crons from "../crons.js";
@@ -28,6 +29,7 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  chat: typeof chat;
   cloudinary: typeof cloudinary;
   content: typeof content;
   crons: typeof crons;

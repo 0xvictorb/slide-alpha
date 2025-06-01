@@ -25,6 +25,7 @@ import { ProfileSkeleton } from './profile-skeleton'
 import { ContentGridSkeleton } from './content-grid-skeleton'
 import { ProfileEditDrawer } from './profile-edit-drawer'
 import { useNavigate } from '@tanstack/react-router'
+import WalletButton from '../../components/shared/wallet-button'
 
 interface ProfileContentProps {
 	profileAddress: string
@@ -32,9 +33,7 @@ interface ProfileContentProps {
 
 function ProfileHeader({
 	user,
-	isOwnProfile,
-	isFollowing,
-	onToggleFollow
+	isOwnProfile
 }: {
 	user: any
 	isOwnProfile: boolean
@@ -42,7 +41,6 @@ function ProfileHeader({
 	onToggleFollow: () => void
 }) {
 	const navigate = useNavigate()
-	const account = useCurrentAccount()
 
 	return (
 		<div className="sticky top-0 z-50 bg-white/95 border-b-2 border-border">
@@ -61,23 +59,10 @@ function ProfileHeader({
 				<h1 className="text-lg font-semibold text-foreground">
 					{user?.name || 'Profile'}
 				</h1>
-				{!isOwnProfile && account?.address ? (
-					<Button
-						onClick={onToggleFollow}
-						variant={isFollowing ? 'neutral' : 'default'}
-						size="sm">
-						{isFollowing ? (
-							<>
-								<UserCheck className="h-4 w-4 mr-2" />
-								Following
-							</>
-						) : (
-							<>
-								<UserPlus className="h-4 w-4 mr-2" />
-								Follow
-							</>
-						)}
-					</Button>
+				{isOwnProfile ? (
+					<div className="flex items-center gap-2">
+						<WalletButton />
+					</div>
 				) : (
 					<div className="w-10" /> // Spacer for center alignment
 				)}

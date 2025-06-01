@@ -7,7 +7,7 @@ import {
 	useSignPersonalMessage
 } from '@mysten/dapp-kit'
 import { formatAddress } from '@mysten/sui/utils'
-import { LogOut, SwitchCamera, User, Wallet } from 'lucide-react'
+import { LogOut, User, Wallet } from 'lucide-react'
 import { useMutation } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 
@@ -73,9 +73,11 @@ const WalletButton = () => {
 		return (
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<Button variant="default" className="flex items-center gap-2">
+					<Button
+						variant="ghost"
+						size="icon"
+						className="flex items-center gap-2">
 						<Wallet className="w-4 h-4" />
-						{currentAccount.label || formatAddress(currentAccount.address)}
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" className="w-56">
@@ -117,7 +119,6 @@ const WalletButton = () => {
 		<ConnectModal
 			trigger={
 				<Button variant="default" className="text-xs">
-					<SwitchCamera className="w-3 h-3" />
 					Connect Wallet
 				</Button>
 			}

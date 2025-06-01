@@ -1,5 +1,6 @@
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
+import { Doc } from './_generated/dataModel'
 
 /**
  * Handles wallet connection and user creation/retrieval
@@ -19,7 +20,7 @@ export const connectWallet = mutation({
 		// Check if user exists
 		const existingUser = await ctx.db
 			.query('users')
-			.withIndex('by_wallet', (q) => q.eq('walletAddress', args.walletAddress))
+			.filter((q) => q.eq(q.field('walletAddress'), args.walletAddress))
 			.unique()
 
 		if (existingUser) {
@@ -31,8 +32,8 @@ export const connectWallet = mutation({
 
 		// Create new user
 		const userId = await ctx.db.insert('users', {
-			name: args.name || 'Anonymous',
 			walletAddress: args.walletAddress,
+			name: args.name || `User ${Math.floor(Math.random() * 10000)}`,
 			followerCount: 0,
 			followingCount: 0,
 			isCreator: false
@@ -70,7 +71,7 @@ export const getCurrentUser = query({
 	handler: async (ctx, args) => {
 		const user = await ctx.db
 			.query('users')
-			.withIndex('by_wallet', (q) => q.eq('walletAddress', args.walletAddress))
+			.filter((q) => q.eq(q.field('walletAddress'), args.walletAddress))
 			.unique()
 
 		return user
@@ -91,7 +92,7 @@ export const updateProfile = mutation({
 		// Find the user by wallet address
 		const user = await ctx.db
 			.query('users')
-			.withIndex('by_wallet', (q) => q.eq('walletAddress', args.walletAddress))
+			.filter((q) => q.eq(q.field('walletAddress'), args.walletAddress))
 			.unique()
 
 		if (!user) {
@@ -126,7 +127,7 @@ export const updateAvatar = mutation({
 		// Find the user by wallet address
 		const user = await ctx.db
 			.query('users')
-			.withIndex('by_wallet', (q) => q.eq('walletAddress', args.walletAddress))
+			.filter((q) => q.eq(q.field('walletAddress'), args.walletAddress))
 			.unique()
 
 		if (!user) {
@@ -186,7 +187,7 @@ export const getUserContent = query({
 		// Find the user by wallet address
 		const user = await ctx.db
 			.query('users')
-			.withIndex('by_wallet', (q) => q.eq('walletAddress', args.walletAddress))
+			.filter((q) => q.eq(q.field('walletAddress'), args.walletAddress))
 			.unique()
 
 		if (!user) {
@@ -217,15 +218,13 @@ export const toggleFollow = mutation({
 		// Get both users
 		const follower = await ctx.db
 			.query('users')
-			.withIndex('by_wallet', (q) =>
-				q.eq('walletAddress', args.followerWalletAddress)
-			)
+			.filter((q) => q.eq(q.field('walletAddress'), args.followerWalletAddress))
 			.unique()
 
 		const following = await ctx.db
 			.query('users')
-			.withIndex('by_wallet', (q) =>
-				q.eq('walletAddress', args.followingWalletAddress)
+			.filter((q) =>
+				q.eq(q.field('walletAddress'), args.followingWalletAddress)
 			)
 			.unique()
 
@@ -292,15 +291,13 @@ export const isFollowing = query({
 		// Get both users
 		const follower = await ctx.db
 			.query('users')
-			.withIndex('by_wallet', (q) =>
-				q.eq('walletAddress', args.followerWalletAddress)
-			)
+			.filter((q) => q.eq(q.field('walletAddress'), args.followerWalletAddress))
 			.unique()
 
 		const following = await ctx.db
 			.query('users')
-			.withIndex('by_wallet', (q) =>
-				q.eq('walletAddress', args.followingWalletAddress)
+			.filter((q) =>
+				q.eq(q.field('walletAddress'), args.followingWalletAddress)
 			)
 			.unique()
 
@@ -341,9 +338,16 @@ export const getUserByWallet = query({
 	handler: async (ctx, args) => {
 		const user = await ctx.db
 			.query('users')
-			.withIndex('by_wallet', (q) => q.eq('walletAddress', args.walletAddress))
+			.filter((q) => q.eq(q.field('walletAddress'), args.walletAddress))
 			.unique()
 
 		return user
+	}
+})
+
+export const listUsers = query({
+	args: {},
+	handler: async (ctx) => {
+		return await ctx.db.query('users').collect()
 	}
 })

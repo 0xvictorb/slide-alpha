@@ -16,6 +16,7 @@ import { Route as ChatImport } from './routes/chat'
 import { Route as IndexImport } from './routes/index'
 import { Route as SearchIndexImport } from './routes/search/index'
 import { Route as ProfileIndexImport } from './routes/profile/index'
+import { Route as ChatThreadIdImport } from './routes/chat/$threadId'
 import { Route as ProfileAddressIndexImport } from './routes/profile/$address/index'
 import { Route as SearchContentContentIdImport } from './routes/search/content.$contentId'
 import { Route as ProfileAddressContentContentIdImport } from './routes/profile/$address/content.$contentId'
@@ -50,6 +51,12 @@ const ProfileIndexRoute = ProfileIndexImport.update({
   id: '/profile/',
   path: '/profile/',
   getParentRoute: () => rootRoute,
+} as any)
+
+const ChatThreadIdRoute = ChatThreadIdImport.update({
+  id: '/$threadId',
+  path: '/$threadId',
+  getParentRoute: () => ChatRoute,
 } as any)
 
 const ProfileAddressIndexRoute = ProfileAddressIndexImport.update({
@@ -96,6 +103,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreateImport
       parentRoute: typeof rootRoute
     }
+    '/chat/$threadId': {
+      id: '/chat/$threadId'
+      path: '/$threadId'
+      fullPath: '/chat/$threadId'
+      preLoaderRoute: typeof ChatThreadIdImport
+      parentRoute: typeof ChatImport
+    }
     '/profile/': {
       id: '/profile/'
       path: '/profile'
@@ -136,10 +150,21 @@ declare module '@tanstack/react-router' {
 
 // Create and export the route tree
 
+interface ChatRouteChildren {
+  ChatThreadIdRoute: typeof ChatThreadIdRoute
+}
+
+const ChatRouteChildren: ChatRouteChildren = {
+  ChatThreadIdRoute: ChatThreadIdRoute,
+}
+
+const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)
+
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/chat': typeof ChatRoute
+  '/chat': typeof ChatRouteWithChildren
   '/create': typeof CreateRoute
+  '/chat/$threadId': typeof ChatThreadIdRoute
   '/profile': typeof ProfileIndexRoute
   '/search': typeof SearchIndexRoute
   '/search/content/$contentId': typeof SearchContentContentIdRoute
@@ -149,8 +174,9 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/chat': typeof ChatRoute
+  '/chat': typeof ChatRouteWithChildren
   '/create': typeof CreateRoute
+  '/chat/$threadId': typeof ChatThreadIdRoute
   '/profile': typeof ProfileIndexRoute
   '/search': typeof SearchIndexRoute
   '/search/content/$contentId': typeof SearchContentContentIdRoute
@@ -161,8 +187,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
-  '/chat': typeof ChatRoute
+  '/chat': typeof ChatRouteWithChildren
   '/create': typeof CreateRoute
+  '/chat/$threadId': typeof ChatThreadIdRoute
   '/profile/': typeof ProfileIndexRoute
   '/search/': typeof SearchIndexRoute
   '/search/content/$contentId': typeof SearchContentContentIdRoute
@@ -176,6 +203,7 @@ export interface FileRouteTypes {
     | '/'
     | '/chat'
     | '/create'
+    | '/chat/$threadId'
     | '/profile'
     | '/search'
     | '/search/content/$contentId'
@@ -186,6 +214,7 @@ export interface FileRouteTypes {
     | '/'
     | '/chat'
     | '/create'
+    | '/chat/$threadId'
     | '/profile'
     | '/search'
     | '/search/content/$contentId'
@@ -196,6 +225,7 @@ export interface FileRouteTypes {
     | '/'
     | '/chat'
     | '/create'
+    | '/chat/$threadId'
     | '/profile/'
     | '/search/'
     | '/search/content/$contentId'
@@ -206,7 +236,7 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ChatRoute: typeof ChatRoute
+  ChatRoute: typeof ChatRouteWithChildren
   CreateRoute: typeof CreateRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
   SearchIndexRoute: typeof SearchIndexRoute
@@ -217,7 +247,7 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ChatRoute: ChatRoute,
+  ChatRoute: ChatRouteWithChildren,
   CreateRoute: CreateRoute,
   ProfileIndexRoute: ProfileIndexRoute,
   SearchIndexRoute: SearchIndexRoute,
@@ -250,10 +280,17 @@ export const routeTree = rootRoute
       "filePath": "index.tsx"
     },
     "/chat": {
-      "filePath": "chat.tsx"
+      "filePath": "chat.tsx",
+      "children": [
+        "/chat/$threadId"
+      ]
     },
     "/create": {
       "filePath": "create.tsx"
+    },
+    "/chat/$threadId": {
+      "filePath": "chat/$threadId.tsx",
+      "parent": "/chat"
     },
     "/profile/": {
       "filePath": "profile/index.tsx"

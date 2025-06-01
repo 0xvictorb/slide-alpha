@@ -133,5 +133,17 @@ export default defineSchema({
 	comments: commentsSchema,
 
 	contentLikes: contentLikesSchema,
-	contentViews: contentViewsSchema
+	contentViews: contentViewsSchema,
+
+	threads: defineTable({
+		participants: v.array(v.id('users')),
+		lastMessageTime: v.number(),
+		lastMessagePreview: v.string()
+	}).index('by_participant', ['participants']),
+
+	messages: defineTable({
+		threadId: v.id('threads'),
+		senderId: v.id('users'),
+		content: v.string()
+	}).index('by_thread', ['threadId'])
 })
