@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
 	ConnectModal,
 	useCurrentAccount,
 	useDisconnectWallet,
-	useSwitchAccount,
-	useSignPersonalMessage
+	useSwitchAccount
 } from '@mysten/dapp-kit'
 import { formatAddress } from '@mysten/sui/utils'
 import { LogOut, User, Wallet } from 'lucide-react'
@@ -24,59 +23,19 @@ import { useAtomValue } from 'jotai'
 import { walletAccountListAtom } from '@/atoms/account.atom'
 import { toast } from 'sonner'
 
-const NONCE_MESSAGE = 'Sign in to Swipe Fun'
-const SIGNED_ADDRESSES_KEY = 'signed_wallet_addresses'
-
 const WalletButton = () => {
 	const currentAccount = useCurrentAccount()
 	const { mutate: disconnect } = useDisconnectWallet()
 	const { mutate: switchAccount } = useSwitchAccount()
-	const { mutate: signMessage } = useSignPersonalMessage()
 	const [open, setOpen] = useState(false)
 	const accounts = useAtomValue(walletAccountListAtom)
 	const connectWalletMutation = useMutation(api.users.connectWallet)
-
-	// Get signed addresses from localStorage
-	const getSignedAddresses = useCallback((): string[] => {
-		const stored = localStorage.getItem(SIGNED_ADDRESSES_KEY)
-		return stored ? JSON.parse(stored) : []
-	}, [])
-
-	// Add address to signed addresses
-	const addSignedAddress = useCallback(
-		(address: string) => {
-			const addresses = getSignedAddresses()
-			if (!addresses.includes(address)) {
-				addresses.push(address)
-				localStorage.setItem(SIGNED_ADDRESSES_KEY, JSON.stringify(addresses))
-			}
-		},
-		[getSignedAddresses]
-	)
-
-	// Check if address has already signed
-	const hasAddressSigned = useCallback(
-		(address: string): boolean => {
-			return getSignedAddresses().includes(address)
-		},
-		[getSignedAddresses]
-	)
 
 	// Handle wallet connection
 	useEffect(() => {
 		const handleWalletConnection = async () => {
 			if (currentAccount?.address) {
 				try {
-					// Check if this address has already signed
-					if (!hasAddressSigned(currentAccount.address)) {
-						// Request signature
-						await signMessage({
-							message: new TextEncoder().encode(NONCE_MESSAGE)
-						})
-						// Store the signed address
-						addSignedAddress(currentAccount.address)
-					}
-
 					// Connect wallet in our database
 					const result = await connectWalletMutation({
 						walletAddress: currentAccount.address,
@@ -94,14 +53,7 @@ const WalletButton = () => {
 		}
 
 		handleWalletConnection()
-	}, [
-		currentAccount?.address,
-		currentAccount?.label,
-		connectWalletMutation,
-		signMessage,
-		hasAddressSigned,
-		addSignedAddress
-	])
+	}, [currentAccount?.address, currentAccount?.label, connectWalletMutation])
 
 	if (currentAccount) {
 		return (
