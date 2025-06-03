@@ -2,6 +2,10 @@ import { v } from 'convex/values'
 import { internalAction, internalMutation, query } from './_generated/server'
 import { internal } from './_generated/api'
 
+const SUI_ADDRESS = '0x2::sui::SUI'
+const SUI_FULL_ADDRESS =
+	'0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI'
+
 interface Token {
 	objectId?: string
 	type: string
@@ -90,16 +94,19 @@ export const fetchTokens = internalAction({
 			const tokens = (await response.json()) as Token[]
 
 			// Add lastUpdated field to each token
-			const processedTokens = tokens.map((token) => ({
-				symbol: token.symbol,
-				type: token.type,
-				decimals: token.decimals,
-				name: token.name,
-				iconUrl: token.iconUrl,
-				alias: token.alias,
-				verified: token.verified ?? false,
-				lastUpdated: Date.now()
-			}))
+			// To minimize the number of tokens, we only store verified tokens
+			const processedTokens = tokens
+				.filter((token) => token.verified)
+				.map((token) => ({
+					symbol: token.symbol,
+					type: token.type === SUI_ADDRESS ? SUI_FULL_ADDRESS : token.type,
+					decimals: token.decimals,
+					name: token.name,
+					iconUrl: token.iconUrl,
+					alias: token.alias,
+					verified: token.verified ?? false,
+					lastUpdated: Date.now()
+				}))
 
 			// Store tokens in Convex
 			await ctx.runMutation(internal.tokens.storeTokens, {
