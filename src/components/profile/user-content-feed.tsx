@@ -5,7 +5,9 @@ import type { Id } from '@convex/_generated/dataModel'
 import { useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, getWalrusExplorerUrl } from '@/lib/utils'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { AiSecurity01Icon } from '@hugeicons/core-free-icons'
 import { VideoDisplay } from '../feed/video-display'
 import { ImageCarousel } from '../feed/image-carousel'
 import { EngagementActions } from '../feed/engagement-actions'
@@ -27,12 +29,25 @@ interface ContentMedia {
 	images?: Array<{
 		url: string
 		alt?: string
+		tuskyFileId?: string
+		tuskyBlobId?: string
+		tuskyBlobObjectId?: string
 	}>
+	video?: {
+		cloudinaryPublicId: string
+		cloudinaryUrl: string
+		thumbnailUrl: string
+		duration: number
+		tuskyFileId?: string
+		tuskyBlobId?: string
+		tuskyBlobObjectId?: string
+	}
 	promotedTokenId?: string
 	creatorAddress: string
 	title: string
 	description?: string
 	hashtags?: string[]
+	isOnChain?: boolean
 	author: {
 		id: Id<'users'>
 		name: string
@@ -377,6 +392,27 @@ export function UserContentFeed({
 							{/* Dark gradient overlay at bottom for better text readability */}
 							<div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none z-5" />
 
+							{/* On-chain indicator */}
+							{content.isOnChain && (
+								<div className="absolute top-4 left-4 z-10">
+									<a
+										href={getWalrusExplorerUrl(
+											`/object/${content.video?.tuskyBlobId || content.images?.[0]?.tuskyBlobId}`
+										)}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full px-2 py-1 hover:bg-black/60 transition-colors">
+										<HugeiconsIcon
+											icon={AiSecurity01Icon}
+											className="w-4 h-4 text-emerald-500"
+										/>
+										<span className="text-xs font-medium text-emerald-500">
+											On-chain
+										</span>
+									</a>
+								</div>
+							)}
+
 							{/* Back button at the top */}
 							<div className="absolute top-4 left-4 z-20">
 								<Button
@@ -444,7 +480,10 @@ export function UserContentFeed({
 									<Hashtags
 										hashtags={content.hashtags}
 										onHashtagClick={(hashtag) => {
-											console.log('Search hashtag:', hashtag)
+											navigate({
+												to: '/search',
+												search: { hashtag, q: '' }
+											})
 										}}
 									/>
 								</div>

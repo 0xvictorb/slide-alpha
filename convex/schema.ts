@@ -13,20 +13,24 @@ const usersSchema = defineTable({
 }).index('by_wallet', ['walletAddress'])
 
 // Media item schema for images
-const imageSchema = v.object({
+export const imageSchema = v.object({
 	cloudinaryPublicId: v.string(),
 	cloudinaryUrl: v.string(),
 	order: v.number(), // To maintain the order of images
-	tuskyFileId: v.optional(v.string()) // Optional Tusky file ID for on-chain storage
+	tuskyFileId: v.optional(v.string()),
+	tuskyBlobId: v.optional(v.string()),
+	tuskyBlobObjectId: v.optional(v.string())
 })
 
 // Video schema with thumbnail support
-const videoSchema = v.object({
+export const videoSchema = v.object({
 	cloudinaryPublicId: v.string(),
 	cloudinaryUrl: v.string(),
 	thumbnailUrl: v.string(),
 	duration: v.number(),
-	tuskyFileId: v.optional(v.string()) // Optional Tusky file ID for on-chain storage
+	tuskyFileId: v.optional(v.string()),
+	tuskyBlobId: v.optional(v.string()),
+	tuskyBlobObjectId: v.optional(v.string())
 })
 
 const contentSchema = defineTable({

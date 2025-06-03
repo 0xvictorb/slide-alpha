@@ -7,16 +7,16 @@ import {
 	FormDescription
 } from '@/components/ui/form'
 import { Switch } from '@/components/ui/switch'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { UseFormReturn } from 'react-hook-form'
 import { createContentSchema } from '@/lib/validations/create-content'
 import { useTokenBalances } from '@/hooks/use-token-balances'
-import { useState } from 'react'
 import { z } from 'zod'
 import { TokenSelector } from '@/components/shared/token-selector'
 import type { TokenData, TokenBalance } from '@/types/token'
+import NiceModal from '@ebay/nice-modal-react'
 
 type FormData = z.infer<typeof createContentSchema>
 
@@ -46,7 +46,6 @@ function TokenDisplay({ token }: { token: TokenBalance }) {
 
 export function TokenPromotion({ form }: TokenPromotionProps) {
 	const { data: tokens } = useTokenBalances()
-	const [isSelectingToken, setIsSelectingToken] = useState(false)
 	const isPromotingToken = form.watch('isPromotingToken')
 	const promotedTokenId = form.watch('promotedTokenId')
 	const selectedToken = tokens?.find((t) => t.type === promotedTokenId)
@@ -91,11 +90,15 @@ export function TokenPromotion({ form }: TokenPromotionProps) {
 						<FormItem>
 							<FormLabel>Select Token</FormLabel>
 							<FormControl>
-								<Button
-									variant="neutral"
-									role="button"
-									onClick={() => setIsSelectingToken(true)}
+								<div
+									onClick={() =>
+										NiceModal.show(TokenSelector, {
+											onSelect: handleTokenSelect,
+											selectedToken
+										})
+									}
 									className={cn(
+										buttonVariants({ variant: 'neutral' }),
 										'w-full justify-between h-auto py-2',
 										!field.value && 'text-muted-foreground'
 									)}>
@@ -105,23 +108,13 @@ export function TokenPromotion({ form }: TokenPromotionProps) {
 										'Select a token to promote'
 									)}
 									<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-								</Button>
+								</div>
 							</FormControl>
 							<FormMessage />
 						</FormItem>
 					)}
 				/>
 			)}
-
-			<TokenSelector
-				open={isSelectingToken}
-				onOpenChange={setIsSelectingToken}
-				onSelect={(token) => {
-					handleTokenSelect(token)
-					setIsSelectingToken(false)
-				}}
-				selectedToken={selectedToken}
-			/>
 		</>
 	)
 }

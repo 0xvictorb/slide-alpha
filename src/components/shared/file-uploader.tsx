@@ -19,6 +19,8 @@ interface CloudinaryUploadResult {
 	thumbnail?: string
 	duration?: number
 	tuskyFileId?: string
+	tuskyBlobId?: string
+	tuskyBlobObjectId?: string
 }
 
 interface FileUploaderProps {
@@ -198,7 +200,6 @@ export function FileUploader({
 			}
 		},
 		onSuccess: (uploadId) => {
-			console.log('Tusky upload success:', uploadId)
 			toast.success('File uploaded to Tusky successfully')
 			// Update the upload status with the Tusky file ID
 			const fileId = selectedFiles[0]?.name
@@ -209,7 +210,9 @@ export function FileUploader({
 					if (currentStatus && currentStatus.result) {
 						const updatedResult = {
 							...currentStatus.result,
-							tuskyFileId: uploadId
+							tuskyFileId: uploadId.uploadId,
+							tuskyBlobId: uploadId.blobId,
+							tuskyBlobObjectId: uploadId.blobObjectId
 						}
 						newStatuses.set(fileId, {
 							...currentStatus,
@@ -331,7 +334,11 @@ export function FileUploader({
 						thumbnail: cloudinaryResult.thumbnail,
 						duration: cloudinaryResult.duration
 					}),
-				...(tuskyId && { tuskyFileId: tuskyId.uploadId })
+				...(tuskyId && {
+					tuskyFileId: tuskyId.uploadId,
+					tuskyBlobId: tuskyId.blobId,
+					tuskyBlobObjectId: tuskyId.blobObjectId
+				})
 			}
 
 			setUploadStatuses((prev) => {

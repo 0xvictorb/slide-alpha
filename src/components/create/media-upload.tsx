@@ -24,6 +24,8 @@ interface CloudinaryUploadResult {
 	thumbnail?: string
 	duration?: number
 	tuskyFileId?: string
+	tuskyBlobId?: string
+	tuskyBlobObjectId?: string
 }
 
 export function MediaUpload({ form }: MediaUploadProps) {
@@ -93,7 +95,9 @@ export function MediaUpload({ form }: MediaUploadProps) {
 												thumbnailUrl: videoResult.thumbnail,
 												duration: videoResult.duration,
 												...(videoResult.tuskyFileId && {
-													tuskyFileId: videoResult.tuskyFileId
+													tuskyFileId: videoResult.tuskyFileId,
+													tuskyBlobId: videoResult.tuskyBlobId,
+													tuskyBlobObjectId: videoResult.tuskyBlobObjectId
 												})
 											})
 										}}
@@ -114,7 +118,9 @@ export function MediaUpload({ form }: MediaUploadProps) {
 												cloudinaryUrl: item.url,
 												order: index,
 												...(item.tuskyFileId && {
-													tuskyFileId: item.tuskyFileId
+													tuskyFileId: item.tuskyFileId,
+													tuskyBlobId: item.tuskyBlobId,
+													tuskyBlobObjectId: item.tuskyBlobObjectId
 												})
 											}))
 											form.setValue('contentType', 'images')

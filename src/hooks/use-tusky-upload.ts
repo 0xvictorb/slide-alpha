@@ -1,10 +1,16 @@
 import { useCallback, useState } from 'react'
 import { Tusky } from '@tusky-io/ts-sdk/web'
 
+interface TuskyUploadResult {
+	uploadId: string
+	blobId: string
+	blobObjectId: string
+}
+
 interface TuskyUploadOptions {
 	vaultId?: string
 	onProgress?: (progress: number) => void
-	onSuccess?: (uploadId: string) => void
+	onSuccess?: (result: TuskyUploadResult) => void
 	onError?: (error: Error) => void
 }
 
@@ -72,13 +78,15 @@ export function useTuskyUpload(options: TuskyUploadOptions) {
 					error: null
 				}))
 
-				onSuccess?.(uploadId)
-
-				return {
+				const uploadResult: TuskyUploadResult = {
 					uploadId,
 					blobId: fileMetadata.blobId,
 					blobObjectId: fileMetadata.blobObjectId
 				}
+
+				onSuccess?.(uploadResult)
+
+				return uploadResult
 			} catch (error) {
 				const err = error instanceof Error ? error : new Error('Upload failed')
 				setState((prev) => ({

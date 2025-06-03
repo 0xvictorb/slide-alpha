@@ -37,8 +37,6 @@ export const TokenSwapDrawer = NiceModal.create(
 		const [swapAmount, setSwapAmount] = useState('')
 		const [slippage, setSlippage] = useState(0.5)
 		const [showSlippageSettings, setShowSlippageSettings] = useState(false)
-		const [isTokenInSelectorOpen, setIsTokenInSelectorOpen] = useState(false)
-		const [isTokenOutSelectorOpen, setIsTokenOutSelectorOpen] = useState(false)
 		const { data: tokens } = useTokenBalances()
 
 		const USDC_Token = tokens?.find((t) => t.type === USDC_ADDRESS)
@@ -74,14 +72,10 @@ export const TokenSwapDrawer = NiceModal.create(
 				}
 				setSelectedTokenIn(tokenBalance)
 			}
-			setIsTokenInSelectorOpen(false)
 		}
 
 		const handleTokenOutSelect = (tokenData: TokenData) => {
-			console.log('selecting token out', tokenData)
-
 			const tokenBalance = tokens?.find((t) => t.type === tokenData.type)
-			console.log('token balance', tokenBalance)
 
 			if (tokenBalance) {
 				if (selectedTokenIn?.type === tokenBalance.type) {
@@ -89,7 +83,6 @@ export const TokenSwapDrawer = NiceModal.create(
 				}
 				setSelectedTokenOut(tokenBalance)
 			}
-			setIsTokenOutSelectorOpen(false)
 		}
 
 		const handleSwapDirection = () => {
@@ -166,258 +159,251 @@ export const TokenSwapDrawer = NiceModal.create(
 		}, [token])
 
 		return (
-			<>
-				<Drawer
-					open={modal.visible}
-					onOpenChange={(open) => (open ? modal.show() : modal.hide())}>
-					<DrawerContent className="max-h-[95vh] bg-background max-w-[780px] mx-auto">
-						<DrawerHeader className="border-b border-border/20 backdrop-blur-sm px-6 py-4">
-							<DrawerTitle>
-								<h2 className="text-lg text-center font-bold mb-4">
-									Swap Tokens
-								</h2>
-								<div className="flex items-start justify-between">
-									<div className="flex items-center gap-4">
-										<div className="relative flex items-center gap-0">
-											{selectedTokenIn && (
-												<Avatar className="size-10 ring-2 ring-background">
-													<AvatarImage
+			<Drawer
+				open={modal.visible}
+				onOpenChange={(open) => (open ? modal.show() : modal.hide())}>
+				<DrawerContent className="max-h-[95vh] bg-background max-w-[780px] mx-auto">
+					<DrawerHeader className="border-b border-border/20 backdrop-blur-sm px-6 py-4">
+						<DrawerTitle>
+							<h2 className="text-lg text-center font-bold mb-4">
+								Swap Tokens
+							</h2>
+							<div className="flex items-start justify-between">
+								<div className="flex items-center gap-4">
+									<div className="relative flex items-center gap-0">
+										{selectedTokenIn && (
+											<Avatar className="size-10 ring-2 ring-background">
+												<AvatarImage
+													src={selectedTokenIn.iconUrl}
+													alt={selectedTokenIn.symbol}
+												/>
+												<AvatarFallback className="bg-primary/10 text-primary font-bold text-sm">
+													{selectedTokenIn.symbol?.charAt(0)}
+												</AvatarFallback>
+											</Avatar>
+										)}
+										{selectedTokenOut && (
+											<Avatar className="-ml-2 size-10 ring-2 ring-background">
+												<AvatarImage
+													src={selectedTokenOut.iconUrl}
+													alt={selectedTokenOut.symbol}
+												/>
+												<AvatarFallback className="bg-secondary/80 text-secondary-foreground font-bold text-sm">
+													{selectedTokenOut.symbol?.charAt(0)}
+												</AvatarFallback>
+											</Avatar>
+										)}
+									</div>
+									<div className="space-y-0.5">
+										<h2 className="text-lg font-bold flex items-center gap-2">
+											{selectedTokenIn?.symbol} → {selectedTokenOut?.symbol}
+										</h2>
+										{selectedTokenIn &&
+											selectedTokenOut &&
+											expectedAmount &&
+											swapAmount && (
+												<p className="text-sm text-muted-foreground">
+													1 {selectedTokenIn.symbol} ≈{' '}
+													<NumberFlow
+														value={
+															Number(expectedAmount.formatted) /
+															Number(swapAmount)
+														}
+														format={{
+															minimumFractionDigits: 2,
+															maximumFractionDigits: 6
+														}}
+													/>{' '}
+													{selectedTokenOut.symbol}
+												</p>
+											)}
+									</div>
+								</div>
+								<Button
+									variant="secondary"
+									size="icon"
+									onClick={() => setShowSlippageSettings(!showSlippageSettings)}
+									className="h-8 w-8 -mt-1">
+									<Settings className="h-4 w-4" />
+								</Button>
+							</div>
+						</DrawerTitle>
+					</DrawerHeader>
+
+					<ScrollArea className="flex-1 h-[calc(95vh-180px)]">
+						<div className="px-4 py-6 space-y-4">
+							{showSlippageSettings && (
+								<Card className="border-dashed">
+									<CardContent className="space-y-3 p-4">
+										<Label className="text-sm font-medium">
+											Slippage Tolerance
+										</Label>
+										<div className="space-y-2">
+											<Slider
+												value={[slippage]}
+												onValueChange={handleSlippageChange}
+												max={5}
+												min={0.1}
+												step={0.1}
+												className="w-full"
+											/>
+											<div className="flex justify-between text-xs text-muted-foreground">
+												<span>0.1%</span>
+												<span className="font-medium">{slippage}%</span>
+												<span>5%</span>
+											</div>
+										</div>
+									</CardContent>
+								</Card>
+							)}
+
+							<Card className="bg-white">
+								<CardContent className="p-4 space-y-2">
+									<Label className="block">You Pay</Label>
+									<div className="flex gap-3">
+										<Button
+											variant="neutral"
+											className="w-[130px]"
+											onClick={() =>
+												NiceModal.show(TokenSelector, {
+													onSelect: handleTokenInSelect,
+													selectedToken: selectedTokenIn
+												})
+											}>
+											<div className="flex items-center gap-2">
+												{selectedTokenIn?.iconUrl && (
+													<img
 														src={selectedTokenIn.iconUrl}
 														alt={selectedTokenIn.symbol}
+														className="w-5 h-5 rounded-full"
 													/>
-													<AvatarFallback className="bg-primary/10 text-primary font-bold text-sm">
-														{selectedTokenIn.symbol?.charAt(0)}
-													</AvatarFallback>
-												</Avatar>
-											)}
-											{selectedTokenOut && (
-												<Avatar className="-ml-2 size-10 ring-2 ring-background">
-													<AvatarImage
+												)}
+												<span>{selectedTokenIn?.symbol || 'Select'}</span>
+											</div>
+											<ChevronDown className="h-4 w-4 text-muted-foreground" />
+										</Button>
+										<NumericInput
+											placeholder="0.0"
+											value={swapAmount}
+											onChange={(value) => handleSwapAmountChange(value)}
+											className="flex-1 h-[42px] shadow-shadow bg-white text-base"
+										/>
+									</div>
+									{selectedTokenIn && (
+										<div className="text-xs text-neutral-500 flex items-center justify-between">
+											<span>
+												Balance: {selectedTokenIn.formattedBalance}{' '}
+												{selectedTokenIn.symbol}
+											</span>
+											<Button
+												variant="default"
+												size="sm"
+												className="h-6 text-xs"
+												onClick={() =>
+													setSwapAmount(selectedTokenIn.formattedBalance)
+												}>
+												Max
+											</Button>
+										</div>
+									)}
+								</CardContent>
+							</Card>
+
+							<div className="flex justify-center relative z-10">
+								<Button
+									variant="secondary"
+									size="icon"
+									onClick={handleSwapDirection}
+									className="size-10">
+									<ArrowUpDown className="h-4 w-4" />
+								</Button>
+							</div>
+
+							<Card className="bg-white">
+								<CardContent className="p-4 space-y-2">
+									<Label className="block">You Receive</Label>
+									<div className="flex gap-3">
+										<Button
+											key={selectedTokenOut?.type}
+											variant="neutral"
+											className="w-[130px]"
+											onClick={() =>
+												NiceModal.show(TokenSelector, {
+													onSelect: handleTokenOutSelect,
+													selectedToken: selectedTokenOut
+												})
+											}>
+											<div className="flex items-center gap-2">
+												{selectedTokenOut?.iconUrl && (
+													<img
 														src={selectedTokenOut.iconUrl}
 														alt={selectedTokenOut.symbol}
+														className="w-5 h-5 rounded-full"
 													/>
-													<AvatarFallback className="bg-secondary/80 text-secondary-foreground font-bold text-sm">
-														{selectedTokenOut.symbol?.charAt(0)}
-													</AvatarFallback>
-												</Avatar>
+												)}
+												<span>{selectedTokenOut?.symbol || 'Select'}</span>
+											</div>
+											<ChevronDown className="h-4 w-4 text-muted-foreground" />
+										</Button>
+										<div className="flex-1 h-[42px] shadow-shadow rounded-md border-2 border-border bg-white px-3 py-2 text-base">
+											{isLoadingQuote ? (
+												<div className="flex items-center gap-2 justify-end">
+													<Loader2 className="h-4 w-4 animate-spin" />
+													<span className="text-neutral-500 text-sm">
+														Calculating...
+													</span>
+												</div>
+											) : expectedAmount ? (
+												expectedAmount.formatted
+											) : (
+												<span className="text-neutral-500">0.0</span>
 											)}
 										</div>
-										<div className="space-y-0.5">
-											<h2 className="text-lg font-bold flex items-center gap-2">
-												{selectedTokenIn?.symbol} → {selectedTokenOut?.symbol}
-											</h2>
-											{selectedTokenIn &&
-												selectedTokenOut &&
-												expectedAmount &&
-												swapAmount && (
-													<p className="text-sm text-muted-foreground">
-														1 {selectedTokenIn.symbol} ≈{' '}
-														<NumberFlow
-															value={
-																Number(expectedAmount.formatted) /
-																Number(swapAmount)
-															}
-															format={{
-																minimumFractionDigits: 2,
-																maximumFractionDigits: 6
-															}}
-														/>{' '}
-														{selectedTokenOut.symbol}
-													</p>
-												)}
-										</div>
 									</div>
-									<Button
-										variant="secondary"
-										size="icon"
-										onClick={() =>
-											setShowSlippageSettings(!showSlippageSettings)
-										}
-										className="h-8 w-8 -mt-1">
-										<Settings className="h-4 w-4" />
-									</Button>
-								</div>
-							</DrawerTitle>
-						</DrawerHeader>
-
-						<ScrollArea className="flex-1 h-[calc(95vh-180px)]">
-							<div className="px-4 py-6 space-y-4">
-								{showSlippageSettings && (
-									<Card className="border-dashed">
-										<CardContent className="space-y-3 p-4">
-											<Label className="text-sm font-medium">
-												Slippage Tolerance
-											</Label>
-											<div className="space-y-2">
-												<Slider
-													value={[slippage]}
-													onValueChange={handleSlippageChange}
-													max={5}
-													min={0.1}
-													step={0.1}
-													className="w-full"
-												/>
-												<div className="flex justify-between text-xs text-muted-foreground">
-													<span>0.1%</span>
-													<span className="font-medium">{slippage}%</span>
-													<span>5%</span>
-												</div>
-											</div>
-										</CardContent>
-									</Card>
-								)}
-
-								<Card className="bg-white">
-									<CardContent className="p-4 space-y-2">
-										<Label className="block">You Pay</Label>
-										<div className="flex gap-3">
-											<Button
-												variant="neutral"
-												className="w-[130px]"
-												onClick={() => setIsTokenInSelectorOpen(true)}>
-												<div className="flex items-center gap-2">
-													{selectedTokenIn?.iconUrl && (
-														<img
-															src={selectedTokenIn.iconUrl}
-															alt={selectedTokenIn.symbol}
-															className="w-5 h-5 rounded-full"
-														/>
-													)}
-													<span>{selectedTokenIn?.symbol || 'Select'}</span>
-												</div>
-												<ChevronDown className="h-4 w-4 text-muted-foreground" />
-											</Button>
-											<NumericInput
-												placeholder="0.0"
-												value={swapAmount}
-												onChange={(value) => handleSwapAmountChange(value)}
-												className="flex-1 h-[42px] shadow-shadow bg-white text-base"
-											/>
+									{selectedTokenOut && (
+										<div className="text-xs text-neutral-500">
+											Balance: {selectedTokenOut.formattedBalance}{' '}
+											{selectedTokenOut.symbol}
 										</div>
-										{selectedTokenIn && (
-											<div className="text-xs text-neutral-500 flex items-center justify-between">
-												<span>
-													Balance: {selectedTokenIn.formattedBalance}{' '}
-													{selectedTokenIn.symbol}
-												</span>
-												<Button
-													variant="default"
-													size="sm"
-													className="h-6 text-xs"
-													onClick={() =>
-														setSwapAmount(selectedTokenIn.formattedBalance)
-													}>
-													Max
-												</Button>
-											</div>
-										)}
-									</CardContent>
-								</Card>
+									)}
+								</CardContent>
+							</Card>
 
-								<div className="flex justify-center relative z-10">
-									<Button
-										variant="secondary"
-										size="icon"
-										onClick={handleSwapDirection}
-										className="size-10">
-										<ArrowUpDown className="h-4 w-4" />
-									</Button>
+							{quoteError && (
+								<div className="text-sm text-destructive bg-destructive/10 px-4 py-2 rounded-lg">
+									Failed to get price quote. Please try again.
 								</div>
+							)}
+						</div>
+					</ScrollArea>
 
-								<Card className="bg-white">
-									<CardContent className="p-4 space-y-2">
-										<Label className="block">You Receive</Label>
-										<div className="flex gap-3">
-											<Button
-												key={selectedTokenOut?.type}
-												variant="neutral"
-												className="w-[130px]"
-												onClick={() => setIsTokenOutSelectorOpen(true)}>
-												<div className="flex items-center gap-2">
-													{selectedTokenOut?.iconUrl && (
-														<img
-															src={selectedTokenOut.iconUrl}
-															alt={selectedTokenOut.symbol}
-															className="w-5 h-5 rounded-full"
-														/>
-													)}
-													<span>{selectedTokenOut?.symbol || 'Select'}</span>
-												</div>
-												<ChevronDown className="h-4 w-4 text-muted-foreground" />
-											</Button>
-											<div className="flex-1 h-[42px] shadow-shadow rounded-md border-2 border-border bg-white px-3 py-2 text-base">
-												{isLoadingQuote ? (
-													<div className="flex items-center gap-2 justify-end">
-														<Loader2 className="h-4 w-4 animate-spin" />
-														<span className="text-neutral-500 text-sm">
-															Calculating...
-														</span>
-													</div>
-												) : expectedAmount ? (
-													expectedAmount.formatted
-												) : (
-													<span className="text-neutral-500">0.0</span>
-												)}
-											</div>
-										</div>
-										{selectedTokenOut && (
-											<div className="text-xs text-neutral-500">
-												Balance: {selectedTokenOut.formattedBalance}{' '}
-												{selectedTokenOut.symbol}
-											</div>
-										)}
-									</CardContent>
-								</Card>
-
-								{quoteError && (
-									<div className="text-sm text-destructive bg-destructive/10 px-4 py-2 rounded-lg">
-										Failed to get price quote. Please try again.
-									</div>
-								)}
-							</div>
-						</ScrollArea>
-
-						<DrawerFooter className="p-4 border-t border-border/20">
+					<DrawerFooter className="p-4 border-t border-border/20">
+						<Button
+							onClick={handleSwap}
+							size="lg"
+							className="w-full h-12 text-base font-medium"
+							disabled={isSwapDisabled}>
+							{swapMutation.isPending ? (
+								<>
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									Swapping...
+								</>
+							) : (
+								`Swap ${selectedTokenIn?.symbol || ''} for ${selectedTokenOut?.symbol || ''}`
+							)}
+						</Button>
+						<DrawerClose asChild>
 							<Button
-								onClick={handleSwap}
+								variant="neutral"
 								size="lg"
 								className="w-full h-12 text-base font-medium"
-								disabled={isSwapDisabled}>
-								{swapMutation.isPending ? (
-									<>
-										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-										Swapping...
-									</>
-								) : (
-									`Swap ${selectedTokenIn?.symbol || ''} for ${selectedTokenOut?.symbol || ''}`
-								)}
+								onClick={() => modal.hide()}>
+								Cancel
 							</Button>
-							<DrawerClose asChild>
-								<Button
-									variant="neutral"
-									size="lg"
-									className="w-full h-12 text-base font-medium"
-									onClick={() => modal.hide()}>
-									Cancel
-								</Button>
-							</DrawerClose>
-						</DrawerFooter>
-					</DrawerContent>
-				</Drawer>
-
-				<TokenSelector
-					open={isTokenInSelectorOpen}
-					onOpenChange={setIsTokenInSelectorOpen}
-					onSelect={handleTokenInSelect}
-					selectedToken={selectedTokenIn}
-				/>
-				<TokenSelector
-					open={isTokenOutSelectorOpen}
-					onOpenChange={setIsTokenOutSelectorOpen}
-					onSelect={handleTokenOutSelect}
-					selectedToken={selectedTokenOut}
-				/>
-			</>
+						</DrawerClose>
+					</DrawerFooter>
+				</DrawerContent>
+			</Drawer>
 		)
 	}
 )

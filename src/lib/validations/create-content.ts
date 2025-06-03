@@ -5,7 +5,9 @@ const imageSchema = z.object({
 	cloudinaryPublicId: z.string(),
 	cloudinaryUrl: z.string(),
 	order: z.number(),
-	tuskyFileId: z.string().optional()
+	tuskyFileId: z.string().optional(),
+	tuskyBlobId: z.string().optional(),
+	tuskyBlobObjectId: z.string().optional()
 })
 
 // Video schema for validation
@@ -14,7 +16,9 @@ const videoSchema = z.object({
 	cloudinaryUrl: z.string(),
 	thumbnailUrl: z.string(),
 	duration: z.number(),
-	tuskyFileId: z.string().optional()
+	tuskyFileId: z.string().optional(),
+	tuskyBlobId: z.string().optional(),
+	tuskyBlobObjectId: z.string().optional()
 })
 
 export const createContentSchema = z

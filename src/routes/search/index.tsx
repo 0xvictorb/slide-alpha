@@ -55,7 +55,7 @@ function RouteComponent() {
 		shouldSearch
 			? {
 					query: actualSearchQuery,
-					paginationOpts: { numItems: 20, cursor: null },
+					paginationOpts: { numItems: 50, cursor: null },
 					isActiveOnly: true
 				}
 			: 'skip'
@@ -67,7 +67,7 @@ function RouteComponent() {
 		shouldSearch && cursor && isLoadingMore
 			? {
 					query: actualSearchQuery,
-					paginationOpts: { numItems: 20, cursor },
+					paginationOpts: { numItems: 50, cursor },
 					isActiveOnly: true
 				}
 			: 'skip'

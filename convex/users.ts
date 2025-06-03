@@ -159,7 +159,9 @@ export const getUserContent = query({
 					cloudinaryUrl: v.string(),
 					thumbnailUrl: v.string(),
 					duration: v.number(),
-					tuskyFileId: v.optional(v.string())
+					tuskyFileId: v.optional(v.string()),
+					tuskyBlobId: v.optional(v.string()),
+					tuskyBlobObjectId: v.optional(v.string())
 				})
 			),
 			images: v.optional(
@@ -168,7 +170,9 @@ export const getUserContent = query({
 						cloudinaryPublicId: v.string(),
 						cloudinaryUrl: v.string(),
 						order: v.number(),
-						tuskyFileId: v.optional(v.string())
+						tuskyFileId: v.optional(v.string()),
+						tuskyBlobId: v.optional(v.string()),
+						tuskyBlobObjectId: v.optional(v.string())
 					})
 				)
 			),

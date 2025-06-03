@@ -6,7 +6,6 @@ import { TokenChartDrawer } from './token-chart-drawer'
 import { TokenSwapDrawer } from './token-swap-drawer'
 import { Card } from '@/components/ui/card'
 import { motion } from 'framer-motion'
-import { SUI_ADDRESS, SUI_FULL_ADDRESS } from '@/constants/common'
 import { Typography } from '@/components/ui/typography'
 import NumberFlow from '@number-flow/react'
 import { useTokensFiatPrice } from '@/hooks/use-tokens-fiat-price'
@@ -20,13 +19,12 @@ interface TokenInfoProps {
 }
 
 export function TokenInfo({ tokenId, className, kolAddress }: TokenInfoProps) {
-	const refinedTokenId = tokenId === SUI_ADDRESS ? SUI_FULL_ADDRESS : tokenId
 	const [isChartOpen, setIsChartOpen] = useState(false)
 	const { data: tokens } = useTokenBalances()
-	const { data: priceChanges } = useTokenPriceChanges([refinedTokenId])
-	const displayToken = tokens?.find((t) => t.type === refinedTokenId)
-	const priceChange = priceChanges?.[refinedTokenId]?.change24h ?? 0
-	const { data: tokenPrices } = useTokensFiatPrice([refinedTokenId])
+	const { data: priceChanges } = useTokenPriceChanges([tokenId])
+	const displayToken = tokens?.find((t) => t.type === tokenId)
+	const priceChange = priceChanges?.[tokenId]?.change24h ?? 0
+	const { data: tokenPrices } = useTokensFiatPrice([tokenId])
 	const tokenPrice =
 		(displayToken && tokenPrices?.[displayToken.symbol]?.price) || 0
 
@@ -120,6 +118,7 @@ export function TokenInfo({ tokenId, className, kolAddress }: TokenInfoProps) {
 				token={displayToken}
 				isOpen={isChartOpen}
 				onOpenChange={setIsChartOpen}
+				kolAddress={kolAddress}
 			/>
 		</>
 	)

@@ -8,7 +8,7 @@ import {
 import { useGetDexScreenerData } from '@/hooks/use-dexscreener-pair-address'
 import { SUI_TYPE_ARG } from '@mysten/sui/utils'
 import type { TokenData } from '@/types/token'
-import { SUI_ADDRESS, SUI_FULL_ADDRESS, USDC_ADDRESS } from '@/constants/common'
+import { SUI_ADDRESS, USDC_ADDRESS } from '@/constants/common'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -18,7 +18,6 @@ import { TradeDownIcon, TradeUpIcon } from '@hugeicons/core-free-icons'
 import type { ReactNode } from 'react'
 import NumberFlow from '@number-flow/react'
 import { cn } from '@/lib/utils'
-import { useTokens } from '@/hooks/use-tokens'
 import { useEffect, useState } from 'react'
 import NiceModal from '@ebay/nice-modal-react'
 import { TokenSwapDrawer } from './token-swap-drawer'
@@ -28,6 +27,7 @@ interface TokenChartDrawerProps {
 	token: TokenData
 	isOpen: boolean
 	onOpenChange: (open: boolean) => void
+	kolAddress: string
 }
 
 function PriceChange({
@@ -193,7 +193,10 @@ function TokenHeader({
 }
 
 // Trading Actions Component
-function TradingActions({ token }: { token: TokenData }) {
+function TradingActions({
+	token,
+	kolAddress
+}: { token: TokenData; kolAddress: string }) {
 	const { data: tokens } = useTokenBalances()
 	const tokenWithBalance = tokens?.find((t) => t.type === token.type)
 
@@ -202,7 +205,7 @@ function TradingActions({ token }: { token: TokenData }) {
 
 		NiceModal.show(TokenSwapDrawer, {
 			token: tokenWithBalance,
-			kolAddress: '0x1234567890123456789012345678901234567890'
+			kolAddress
 		})
 	}
 
@@ -211,7 +214,7 @@ function TradingActions({ token }: { token: TokenData }) {
 
 		NiceModal.show(TokenSwapDrawer, {
 			token: tokenWithBalance,
-			kolAddress: '0x1234567890123456789012345678901234567890'
+			kolAddress
 		})
 	}
 
@@ -240,14 +243,15 @@ function TradingActions({ token }: { token: TokenData }) {
 export function TokenChartDrawer({
 	token,
 	isOpen,
-	onOpenChange
+	onOpenChange,
+	kolAddress
 }: TokenChartDrawerProps) {
-	const isSUI = token.type === SUI_ADDRESS || token.type === SUI_FULL_ADDRESS
-	const { tokens } = useTokens()
+	const isSUI = token.type === SUI_ADDRESS
+	const { data: tokens } = useTokenBalances()
 
 	// Determine the token pair for DexScreener
 	const tokenAddresses = isSUI
-		? [SUI_FULL_ADDRESS, USDC_ADDRESS]
+		? [SUI_ADDRESS, USDC_ADDRESS]
 		: token.type === USDC_ADDRESS
 			? [SUI_TYPE_ARG, token.type]
 			: [token.type, SUI_TYPE_ARG]
@@ -258,7 +262,7 @@ export function TokenChartDrawer({
 	const bestPair = dexData?.bestPair
 
 	const inputToken = token
-	const outputToken = tokens.find(
+	const outputToken = tokens?.find(
 		(t) =>
 			t.type ===
 			(tokenAddresses[0] === inputToken.type
@@ -365,7 +369,7 @@ export function TokenChartDrawer({
 							</CardContent>
 
 							{/* Trading Actions */}
-							<TradingActions token={token} />
+							<TradingActions token={token} kolAddress={kolAddress} />
 						</div>
 					</ScrollArea>
 				</div>

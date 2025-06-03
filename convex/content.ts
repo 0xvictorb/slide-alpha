@@ -1,22 +1,7 @@
 import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import { paginationOptsValidator } from 'convex/server'
-
-// Media schemas for validation
-const imageSchema = v.object({
-	cloudinaryPublicId: v.string(),
-	cloudinaryUrl: v.string(),
-	order: v.number(),
-	tuskyFileId: v.optional(v.string())
-})
-
-const videoSchema = v.object({
-	cloudinaryPublicId: v.string(),
-	cloudinaryUrl: v.string(),
-	thumbnailUrl: v.string(),
-	duration: v.number(),
-	tuskyFileId: v.optional(v.string())
-})
+import { imageSchema, videoSchema } from './schema'
 
 export const getFirstActiveContent = query({
 	handler: async (ctx) => {

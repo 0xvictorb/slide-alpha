@@ -3,7 +3,7 @@ import { useQuery, useMutation } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import type { Id } from '@convex/_generated/dataModel'
 import { useNavigate } from '@tanstack/react-router'
-import { cn } from '@/lib/utils'
+import { cn, getWalrusExplorerUrl } from '@/lib/utils'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Loading02Icon, AiSecurity01Icon } from '@hugeicons/core-free-icons'
 import { VideoDisplay } from './video-display'
@@ -26,7 +26,19 @@ interface ContentMedia {
 	images?: Array<{
 		url: string
 		alt?: string
+		tuskyFileId?: string
+		tuskyBlobId?: string
+		tuskyBlobObjectId?: string
 	}>
+	video?: {
+		cloudinaryPublicId: string
+		cloudinaryUrl: string
+		thumbnailUrl: string
+		duration: number
+		tuskyFileId?: string
+		tuskyBlobId?: string
+		tuskyBlobObjectId?: string
+	}
 	promotedTokenId?: string
 	creatorAddress: string
 	title: string
@@ -70,7 +82,7 @@ export function ContentFeed({ className }: ContentFeedProps) {
 
 	// Always load initial content, regardless of splash screen state
 	const initialContent = useQuery(api.content.getPaginatedContent, {
-		paginationOpts: { numItems: 5, cursor: null },
+		paginationOpts: { numItems: 50, cursor: null },
 		preferVideos: true
 	})
 
@@ -79,7 +91,7 @@ export function ContentFeed({ className }: ContentFeedProps) {
 		api.content.getPaginatedContent,
 		shouldLoadMore && cursor
 			? {
-					paginationOpts: { numItems: 5, cursor },
+					paginationOpts: { numItems: 50, cursor },
 					preferVideos: true
 				}
 			: 'skip'
@@ -120,7 +132,8 @@ export function ContentFeed({ className }: ContentFeedProps) {
 				resourceType: 'image' as const,
 				images: content.images.map((image: any) => ({
 					url: image.cloudinaryUrl,
-					alt: image.cloudinaryPublicId
+					alt: image.cloudinaryPublicId,
+					tuskyFileId: image.tuskyFileId
 				}))
 			}
 		} else {
@@ -128,7 +141,14 @@ export function ContentFeed({ className }: ContentFeedProps) {
 				...baseContent,
 				mediaUrl: content.video?.cloudinaryUrl || '',
 				thumbnailUrl: content.video?.thumbnailUrl || '',
-				resourceType: 'video' as const
+				resourceType: 'video' as const,
+				video: {
+					cloudinaryPublicId: content.video?.cloudinaryPublicId || '',
+					cloudinaryUrl: content.video?.cloudinaryUrl || '',
+					thumbnailUrl: content.video?.thumbnailUrl || '',
+					duration: content.video?.duration || 0,
+					tuskyFileId: content.video?.tuskyFileId
+				}
 			}
 		}
 	}, [])
@@ -416,7 +436,13 @@ export function ContentFeed({ className }: ContentFeedProps) {
 							{/* On-chain indicator */}
 							{content.isOnChain && (
 								<div className="absolute top-4 left-4 z-10">
-									<div className="flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full px-2 py-1">
+									<a
+										href={getWalrusExplorerUrl(
+											`/object/${content.video?.tuskyBlobId || content.images?.[0]?.tuskyBlobId}`
+										)}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full px-2 py-1 hover:bg-black/60 transition-colors">
 										<HugeiconsIcon
 											icon={AiSecurity01Icon}
 											className="w-4 h-4 text-emerald-500"
@@ -424,7 +450,7 @@ export function ContentFeed({ className }: ContentFeedProps) {
 										<span className="text-xs font-medium text-emerald-500">
 											On-chain
 										</span>
-									</div>
+									</a>
 								</div>
 							)}
 

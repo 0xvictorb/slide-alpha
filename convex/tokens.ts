@@ -99,7 +99,7 @@ export const fetchTokens = internalAction({
 				.filter((token) => token.verified)
 				.map((token) => ({
 					symbol: token.symbol,
-					type: token.type === SUI_ADDRESS ? SUI_FULL_ADDRESS : token.type,
+					type: token.type === SUI_FULL_ADDRESS ? SUI_ADDRESS : token.type,
 					decimals: token.decimals,
 					name: token.name,
 					iconUrl: token.iconUrl,

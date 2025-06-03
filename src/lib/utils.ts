@@ -32,3 +32,7 @@ export const sleep = (ms: number) => {
 export const getExplorerUrl = (pathname: string) => {
 	return joinURL('https://suiscan.xyz', pathname)
 }
+
+export const getWalrusExplorerUrl = (pathname: string) => {
+	return joinURL('https://walruscan.com', pathname)
+}

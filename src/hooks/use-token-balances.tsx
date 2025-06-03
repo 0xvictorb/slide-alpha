@@ -1,12 +1,12 @@
 import { useCurrentAccount, useSuiClient } from '@mysten/dapp-kit'
 import { SuiClient } from '@mysten/sui/client'
-import { useQueries, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { fromDecimals } from '@/lib/number'
-import { useTokens } from './use-tokens'
 import { useTokensFiatPrice } from './use-tokens-fiat-price'
-import { getCoinMetadata } from '@/lib/sui'
 import type { TokenBalance } from '@/types/token'
-import { SUI_ADDRESS, SUI_FULL_ADDRESS } from '@/constants/common'
+import { SUI_ADDRESS } from '@/constants/common'
+import { api } from '@convex/_generated/api'
+import { useQuery as useConvexQuery } from 'convex/react'
 
 async function getAllTokenBalances(client: SuiClient, address: string) {
 	const allCoins = await client.getAllCoins({
@@ -20,7 +20,7 @@ async function getAllTokenBalances(client: SuiClient, address: string) {
 	})
 
 	return Array.from(balanceMap.entries()).map(([coinType, balance]) => ({
-		coinType: coinType === SUI_ADDRESS ? SUI_FULL_ADDRESS : coinType,
+		coinType,
 		balance: balance.toString()
 	}))
 }
@@ -28,7 +28,7 @@ async function getAllTokenBalances(client: SuiClient, address: string) {
 export function useTokenBalances() {
 	const account = useCurrentAccount()
 	const client = useSuiClient()
-	const { tokens } = useTokens()
+	const tokens = useConvexQuery(api.tokens.getTokens)
 
 	const balancesQuery = useQuery({
 		queryKey: ['token-balances', account?.address],
@@ -41,28 +41,22 @@ export function useTokenBalances() {
 		balancesQuery.data?.map((b) => b.coinType) || []
 	)
 
-	const metadataQueries = useQueries({
-		queries: (balancesQuery.data || []).map((balance) => ({
-			queryKey: ['coin-metadata', balance.coinType],
-			queryFn: () => getCoinMetadata(client, balance.coinType),
-			staleTime: 60 * 60 * 1000,
-			cacheTime: 60 * 60 * 1000
-		}))
-	})
+	// const metadataQueries = useQueries({
+	// 	queries: (balancesQuery.data || []).map((balance) => ({
+	// 		queryKey: ['coin-metadata', balance.coinType],
+	// 		queryFn: () => getCoinMetadata(client, balance.coinType),
+	// 		staleTime: 60 * 60 * 1000,
+	// 		cacheTime: 60 * 60 * 1000
+	// 	}))
+	// })
 
 	const tokensWithBalances = tokens
-		?.map((token, index) => {
-			const isSUI =
-				token.type === SUI_FULL_ADDRESS || token.type === SUI_ADDRESS
-
-			const balance = balancesQuery.data?.find(
-				(b) =>
-					b.coinType === token.type ||
-					(isSUI &&
-						(b.coinType === SUI_FULL_ADDRESS || b.coinType === SUI_ADDRESS))
+		?.map((token) => {
+			const balanceData = balancesQuery.data?.find(
+				(b) => b.coinType === token.type
 			)
 			const formattedBalance =
-				fromDecimals(balance?.balance || '0', token?.decimals || 0) || '0'
+				fromDecimals(balanceData?.balance || '0', token?.decimals || 0) || '0'
 			const usdPrice = tokenPrices?.[token.symbol]?.price || 0
 			const usdValue =
 				usdPrice && Number(formattedBalance) > 0
@@ -71,9 +65,9 @@ export function useTokenBalances() {
 
 			return {
 				...token,
-				...metadataQueries[index]?.data,
-				iconUrl: metadataQueries[index]?.data?.iconUrl || token.iconUrl,
-				balance: balance?.balance || '0',
+				// ...metadataQueries[index]?.data,
+				// iconUrl: metadataQueries[index]?.data?.iconUrl || token.iconUrl,
+				balance: balanceData?.balance || '0',
 				formattedBalance,
 				usdValue,
 				usdPrice
@@ -81,12 +75,11 @@ export function useTokenBalances() {
 		})
 		?.sort((a, b) => {
 			// Verified SUI first
-			const isSUIA = a.type === SUI_FULL_ADDRESS || a.type === SUI_ADDRESS
-			const isSUIB = b.type === SUI_FULL_ADDRESS || b.type === SUI_ADDRESS
+			const isSUIA = a.type === SUI_ADDRESS
+			const isSUIB = b.type === SUI_ADDRESS
 
 			if (isSUIA && !isSUIB) return -1
 			if (!isSUIA && isSUIB) return 1
-			if (isSUIA && isSUIB) return 0
 
 			// Then tokens with balances (non-zero)
 			const hasBalanceA = Number(a.formattedBalance) > 0
@@ -99,13 +92,6 @@ export function useTokenBalances() {
 			if (hasBalanceA && hasBalanceB) {
 				return (b.usdValue || 0) - (a.usdValue || 0)
 			}
-
-			// Then verified tokens without balances
-			const isVerifiedA = a.verified || false
-			const isVerifiedB = b.verified || false
-
-			if (isVerifiedA && !isVerifiedB) return -1
-			if (!isVerifiedA && isVerifiedB) return 1
 
 			// Finally, sort alphabetically by symbol
 			return a.symbol.localeCompare(b.symbol)
